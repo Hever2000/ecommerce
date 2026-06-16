@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl openssl1.1-compat
 
 ENV NODE_ENV=production
 
@@ -11,9 +11,10 @@ COPY dist ./dist
 COPY package*.json ./
 COPY prisma ./prisma
 
-# Instalamos solo dependencias de producción
-RUN npm ci --only=production
+# Instalamos TODAS las dependencias (necesitamos prisma CLI para generate)
+RUN npm ci
 RUN npx prisma generate
+RUN npm prune --production
 
 EXPOSE 3000
 
