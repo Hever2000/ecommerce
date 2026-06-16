@@ -73,3 +73,5 @@ docker-compose.override.yml
 tmp/
 temp/
 *.tgz
+
+/generated/prisma
