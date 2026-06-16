@@ -1,5 +1,5 @@
 import {
-  Controller, Post, Get, Param, Body, Headers,
+  Controller, Post, Get, Param, Body, Headers, Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
@@ -7,6 +7,8 @@ import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { ParseUUIDPipe } from '../../common/pipes/parse-uuid.pipe';
+import { CreatePreferenceResponseDto } from './dto/create-preference-response.dto';
+import { WebhookQueryDto } from './dto/webhook-query.dto';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -19,18 +21,22 @@ export class PaymentsController {
   async webhook(
     @Body() payload: any,
     @Headers('x-signature') signature?: string,
+    @Headers('x-request-id') requestId?: string,
+    @Query() query?: WebhookQueryDto,
   ) {
-    // In production: validate webhook signature
-    // const isValid = validateMpSignature(payload, signature);
-    return this.paymentsService.handleWebhook(payload);
+    return this.paymentsService.handleWebhook(
+      payload,
+      { 'x-signature': signature, 'x-request-id': requestId },
+      query?.['data.id'],
+    );
   }
 
+  @Public()
   @Post(':orderId/preference')
-  @ApiBearerAuth()
-  @Roles('ADMIN', 'EMPLOYEE')
-  @Permissions('VIEW_ORDERS')
   @ApiOperation({ summary: 'Create payment preference for order' })
-  createPreference(@Param('orderId', ParseUUIDPipe) orderId: string) {
+  async createPreference(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+  ): Promise<CreatePreferenceResponseDto> {
     return this.paymentsService.createPreference(orderId);
   }
 
