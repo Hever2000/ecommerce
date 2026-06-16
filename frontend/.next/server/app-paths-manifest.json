@@ -1,0 +1,14 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/checkout/page": "app/checkout/page.js",
+  "/cart/page": "app/cart/page.js",
+  "/confirmation/page": "app/confirmation/page.js",
+  "/pending/page": "app/pending/page.js",
+  "/failed/page": "app/failed/page.js",
+  "/login/page": "app/login/page.js",
+  "/products/page": "app/products/page.js",
+  "/products/[slug]/page": "app/products/[slug]/page.js",
+  "/page": "app/page.js",
+  "/register/page": "app/register/page.js",
+  "/success/page": "app/success/page.js"
+}
