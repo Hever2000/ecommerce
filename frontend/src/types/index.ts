@@ -1,4 +1,4 @@
-export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'paid' | 'failed' | 'shipped' | 'delivered' | 'cancelled';
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'refunded';
 
