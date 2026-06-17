@@ -39,9 +39,11 @@ export class StorageService implements IStorageService {
   }
 
   private resolveBucket(): string {
-    const bucket = process.env.AWS_S3_BUCKET_NAME;
+    const bucket = process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET;
     if (!bucket) {
-      throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
+      throw new Error(
+        'S3 bucket not configured. Set AWS_S3_BUCKET_NAME or AWS_S3_BUCKET in env',
+      );
     }
     return bucket;
   }

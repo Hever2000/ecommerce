@@ -35,10 +35,25 @@ describe('StorageService', () => {
   });
 
   describe('constructor', () => {
-    it('should throw if AWS_S3_BUCKET_NAME is not set', () => {
+    it('should throw if neither AWS_S3_BUCKET_NAME nor AWS_S3_BUCKET is set', () => {
+      const oldName = process.env.AWS_S3_BUCKET_NAME;
+      const oldBucket = process.env.AWS_S3_BUCKET;
       delete process.env.AWS_S3_BUCKET_NAME;
-      expect(() => new StorageService()).toThrow('AWS_S3_BUCKET_NAME environment variable is not set');
-      process.env.AWS_S3_BUCKET_NAME = 'ecommerce-bucket-santiagocoronel';
+      delete process.env.AWS_S3_BUCKET;
+      expect(() => new StorageService()).toThrow('S3 bucket not configured');
+      process.env.AWS_S3_BUCKET_NAME = oldName;
+      process.env.AWS_S3_BUCKET = oldBucket;
+    });
+
+    it('should use AWS_S3_BUCKET as fallback', () => {
+      const oldName = process.env.AWS_S3_BUCKET_NAME;
+      const oldBucket = process.env.AWS_S3_BUCKET;
+      delete process.env.AWS_S3_BUCKET_NAME;
+      process.env.AWS_S3_BUCKET = 'fallback-bucket';
+      const fallback = new StorageService();
+      expect(fallback.getBucket()).toBe('fallback-bucket');
+      process.env.AWS_S3_BUCKET_NAME = oldName;
+      process.env.AWS_S3_BUCKET = oldBucket;
     });
   });
 
