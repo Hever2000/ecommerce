@@ -143,19 +143,51 @@ async function uploadRequest<T>(
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
 
-  const headers: Record<string, string> = {};
-
-  const token = getAuthToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  async function doFetch(authToken?: string): Promise<Response> {
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    return fetch(url, { method: 'POST', headers, body: formData });
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
+  let token = getAuthToken() || undefined;
+  let response = await doFetch(token);
 
+  if (response.status === 401 && !endpoint.includes('/auth/refresh')) {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      try {
+        const newToken = await refreshAccessToken();
+        onRefreshed(newToken);
+        token = newToken;
+        response = await doFetch(newToken);
+      } catch {
+        onRefreshFailed();
+        clearAuthAndRedirect();
+        throw new ApiError('Session expired', 401);
+      } finally {
+        isRefreshing = false;
+      }
+    } else {
+      return new Promise<T>((resolve, reject) => {
+        subscribers.push(async (newToken: string) => {
+          try {
+            const retry = await doFetch(newToken);
+            const result = await parseUploadResponse<T>(retry);
+            resolve(result);
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+    }
+  }
+
+  return parseUploadResponse<T>(response);
+}
+
+async function parseUploadResponse<T>(response: Response): Promise<T> {
   if (response.status === 204) {
     return undefined as T;
   }
