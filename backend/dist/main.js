@@ -10,8 +10,20 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.setGlobalPrefix('api/v1');
     app.use((0, helmet_1.default)());
+    const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3001')
+        .split(',')
+        .map((o) => o.trim());
     app.enableCors({
-        origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+        origin(origin, callback) {
+            if (!origin ||
+                allowedOrigins.includes(origin) ||
+                origin.endsWith('.vercel.app')) {
+                callback(null, true);
+            }
+            else {
+                callback(new Error(`Origin ${origin} not allowed by CORS`));
+            }
+        },
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         credentials: true,
     });
