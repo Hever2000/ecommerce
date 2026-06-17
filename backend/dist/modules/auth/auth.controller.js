@@ -20,6 +20,7 @@ const login_dto_1 = require("./dto/login.dto");
 const register_dto_1 = require("./dto/register.dto");
 const google_login_dto_1 = require("./dto/google-login.dto");
 const refresh_dto_1 = require("./dto/refresh.dto");
+const logout_dto_1 = require("./dto/logout.dto");
 const public_decorator_1 = require("../../common/decorators/public.decorator");
 let AuthController = class AuthController {
     constructor(authService) {
@@ -36,6 +37,9 @@ let AuthController = class AuthController {
     }
     async refresh(dto) {
         return this.authService.refresh(dto.refreshToken);
+    }
+    async logout(dto) {
+        return this.authService.logout(dto);
     }
 };
 exports.AuthController = AuthController;
@@ -87,6 +91,16 @@ __decorate([
     __metadata("design:paramtypes", [refresh_dto_1.RefreshDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refresh", null);
+__decorate([
+    (0, common_1.Post)('logout'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Logout and invalidate refresh token' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Logout successful' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [logout_dto_1.LogoutDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "logout", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.Controller)('auth'),

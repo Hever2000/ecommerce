@@ -162,6 +162,10 @@ let AuthService = AuthService_1 = class AuthService {
             },
         };
     }
+    async logout(dto) {
+        this.logger.log(`Logout attempt for refresh token`);
+        return { message: 'Logout successful' };
+    }
     async refresh(refreshToken) {
         try {
             const payload = this.jwtService.verify(refreshToken);

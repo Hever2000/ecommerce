@@ -26,6 +26,11 @@ export function getStoredUser(): AuthUser | null {
   return raw ? JSON.parse(raw) : null;
 }
 
+export function getStoredRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('refresh-token');
+}
+
 export function clearAuth() {
   localStorage.removeItem('auth-token');
   localStorage.removeItem('refresh-token');

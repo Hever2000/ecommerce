@@ -3,6 +3,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { LogoutDto } from './dto/logout.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -45,5 +46,8 @@ export declare class AuthController {
     }>;
     refresh(dto: RefreshDto): Promise<{
         accessToken: string;
+    }>;
+    logout(dto: LogoutDto): Promise<{
+        message: string;
     }>;
 }

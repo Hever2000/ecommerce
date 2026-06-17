@@ -6,6 +6,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
+import { LogoutDto } from './dto/logout.dto';
 
 @Injectable()
 export class AuthService {
@@ -181,6 +182,11 @@ export class AuthService {
         permissions,
       },
     };
+  }
+
+  async logout(dto: LogoutDto): Promise<{ message: string }> {
+    this.logger.log(`Logout attempt for refresh token`);
+    return { message: 'Logout successful' };
   }
 
   async refresh(refreshToken: string) {

@@ -8,7 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { GoogleLogin } from '@react-oauth/google';
 import { api, ApiError } from '@/lib/api';
-import { storeAuth, getRedirectPath } from '@/lib/auth';
+import { getRedirectPath } from '@/lib/auth';
+import { useAuth } from '@/context/AuthContext';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
@@ -21,6 +22,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
@@ -35,7 +37,7 @@ export default function LoginPage() {
     setLoginError(null);
     try {
       const res = await api.post<any>('/auth/login', data);
-      storeAuth(res);
+      auth.login(res);
       router.push(getRedirectPath(res.user.role));
     } catch (err) {
       if (err instanceof ApiError) {
@@ -52,7 +54,7 @@ export default function LoginPage() {
       const res = await api.post<any>('/auth/google', {
         idToken: credentialResponse.credential,
       });
-      storeAuth(res);
+      auth.login(res);
       router.push(getRedirectPath(res.user.role));
     } catch (err) {
       if (err instanceof ApiError) {

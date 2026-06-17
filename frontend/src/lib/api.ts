@@ -17,6 +17,67 @@ function getAuthToken(): string | null {
   return localStorage.getItem('auth-token');
 }
 
+let isRefreshing = false;
+let subscribers: Array<(token: string) => void> = [];
+
+function onRefreshed(token: string) {
+  subscribers.forEach((cb) => cb(token));
+  subscribers = [];
+}
+
+function onRefreshFailed() {
+  subscribers = [];
+}
+
+function clearAuthAndRedirect() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('auth-token');
+  localStorage.removeItem('refresh-token');
+  localStorage.removeItem('auth-user');
+  window.location.href = '/login';
+}
+
+async function refreshAccessToken(): Promise<string> {
+  const refreshTokenValue = localStorage.getItem('refresh-token');
+  if (!refreshTokenValue) throw new Error('No refresh token');
+
+  const res = await fetch(`${API_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: refreshTokenValue }),
+  });
+
+  if (!res.ok) throw new Error('Refresh failed');
+
+  const data = await res.json();
+  localStorage.setItem('auth-token', data.accessToken);
+  return data.accessToken;
+}
+
+async function executeRequest<T>(
+  url: string,
+  options: RequestInit,
+  headers: Record<string, string>
+): Promise<T> {
+  const response = await fetch(url, { ...options, headers });
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new ApiError(
+      data?.message || data?.error || response.statusText,
+      response.status,
+      data
+    );
+  }
+
+  return data as T;
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit & { params?: Record<string, string> } = {}
@@ -40,26 +101,40 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers,
-  });
+  try {
+    return await executeRequest<T>(url, fetchOptions, headers);
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      error.status === 401 &&
+      !endpoint.includes('/auth/refresh')
+    ) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        try {
+          const newToken = await refreshAccessToken();
+          onRefreshed(newToken);
+          headers['Authorization'] = `Bearer ${newToken}`;
+          return await executeRequest<T>(url, fetchOptions, headers);
+        } catch (refreshError) {
+          onRefreshFailed();
+          clearAuthAndRedirect();
+          throw refreshError;
+        } finally {
+          isRefreshing = false;
+        }
+      }
 
-  if (response.status === 204) {
-    return undefined as T;
+      return new Promise<T>((resolve, reject) => {
+        subscribers.push((newToken: string) => {
+          headers['Authorization'] = `Bearer ${newToken}`;
+          executeRequest<T>(url, fetchOptions, headers).then(resolve, reject);
+        });
+      });
+    }
+
+    throw error;
   }
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new ApiError(
-      data?.message || data?.error || response.statusText,
-      response.status,
-      data
-    );
-  }
-
-  return data as T;
 }
 
 export const api = {

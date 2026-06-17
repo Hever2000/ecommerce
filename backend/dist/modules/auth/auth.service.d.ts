@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
+import { LogoutDto } from './dto/logout.dto';
 export declare class AuthService {
     private prisma;
     private jwtService;
@@ -45,6 +46,9 @@ export declare class AuthService {
         };
         accessToken: string;
         refreshToken: string;
+    }>;
+    logout(dto: LogoutDto): Promise<{
+        message: string;
     }>;
     refresh(refreshToken: string): Promise<{
         accessToken: string;
