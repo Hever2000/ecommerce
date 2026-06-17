@@ -40,9 +40,8 @@ export function clearAuth() {
 export function getRedirectPath(role: string): string {
   switch (role) {
     case 'ADMIN':
-      return '/admin/dashboard';
     case 'EMPLOYEE':
-      return '/employee/dashboard';
+      return '/dashboard';
     default:
       return '/';
   }
