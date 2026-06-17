@@ -19,6 +19,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ShippingModule } from './modules/shipping/shipping.module';
 import { EmailModule } from './modules/email/email.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { AuditModule } from './modules/audit/audit.module';
 
@@ -45,6 +46,7 @@ import { AuditModule } from './modules/audit/audit.module';
     PaymentsModule,
     ShippingModule,
     EmailModule,
+    StorageModule,
     UploadsModule,
     AuditModule,
   ],

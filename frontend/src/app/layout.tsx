@@ -7,7 +7,8 @@ import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
   title: 'STORE — Premium Apparel',
-  description: 'Premium clothing crafted for those who demand more. Quality, comfort, and style — redefined.',
+  description:
+    'Premium clothing crafted for those who demand more. Quality, comfort, and style — redefined.',
   keywords: 'clothing, apparel, premium, fashion, style',
   openGraph: {
     title: 'STORE — Premium Apparel',

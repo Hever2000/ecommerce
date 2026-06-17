@@ -1,16 +1,24 @@
 import {
-  Controller, Get, Post, Put, Delete,
-  Body, Param, Query,
+  Controller, Get, Post, Put, Patch, Delete,
+  Body, Param, Query, UploadedFiles, UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { ReorderImagesDto } from './dto/reorder-images.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { ParseUUIDPipe } from '../../common/pipes/parse-uuid.pipe';
+import {
+  ALLOWED_MIME_TYPES,
+  MAX_FILE_SIZE,
+} from '../storage/constants/storage.constants';
 
 @ApiTags('Products')
 @Controller('products')
@@ -59,11 +67,65 @@ export class ProductsController {
     return this.productsService.update(id, dto);
   }
 
+  @Post(':id/images')
+  @ApiBearerAuth()
+  @Roles('ADMIN', 'EMPLOYEE')
+  @Permissions('UPDATE_PRODUCT')
+  @ApiOperation({ summary: 'Upload image for product' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.productsService.uploadImage(id, file);
+  }
+
+  @Post(':id/images/multiple')
+  @ApiBearerAuth()
+  @Roles('ADMIN', 'EMPLOYEE')
+  @Permissions('UPDATE_PRODUCT')
+  @ApiOperation({ summary: 'Upload multiple images for product' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  async uploadMultipleImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.productsService.uploadMultipleImages(id, files);
+  }
+
+  @Delete(':id/images/:imageId')
+  @ApiBearerAuth()
+  @Roles('ADMIN', 'EMPLOYEE')
+  @Permissions('UPDATE_PRODUCT')
+  @ApiOperation({ summary: 'Delete product image' })
+  async deleteImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('imageId', ParseUUIDPipe) imageId: string,
+  ) {
+    await this.productsService.deleteImage(id, imageId);
+    return { deleted: true };
+  }
+
+  @Patch(':id/images/reorder')
+  @ApiBearerAuth()
+  @Roles('ADMIN', 'EMPLOYEE')
+  @Permissions('UPDATE_PRODUCT')
+  @ApiOperation({ summary: 'Reorder product images' })
+  async reorderImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReorderImagesDto,
+  ) {
+    await this.productsService.reorderImages(id, dto.imageIds);
+    return { reordered: true };
+  }
+
   @Delete(':id')
   @ApiBearerAuth()
   @Roles('ADMIN', 'EMPLOYEE')
   @Permissions('DELETE_PRODUCT')
-  @ApiOperation({ summary: 'Soft delete product' })
+  @ApiOperation({ summary: 'Soft delete product with S3 image cleanup' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.softDelete(id);
   }

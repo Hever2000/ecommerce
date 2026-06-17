@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Injectable, NotFoundException, ConflictException, Logger, BadRequestException } from '@nestjs/common';
+import { Express } from 'express';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
@@ -9,7 +11,10 @@ import { QueryProductDto } from './dto/query-product.dto';
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
 
   async create(dto: CreateProductDto) {
     const existing = await this.prisma.product.findUnique({
@@ -267,14 +272,125 @@ export class ProductsService {
     return product;
   }
 
+  async uploadImage(
+    productId: string,
+    file: Express.Multer.File,
+    alt?: string,
+    variantId?: string,
+  ) {
+    await this.findOne(productId);
+
+    this.storage.validateFile(file);
+
+    const key = this.storage.generateKey(productId, file.originalname);
+
+    const result = await this.storage.upload({
+      file,
+      key,
+      contentType: file.mimetype,
+    });
+
+    const maxOrder = await this.prisma.productImage.aggregate({
+      where: { productId },
+      _max: { order: true },
+    });
+
+    const image = await this.prisma.productImage.create({
+      data: {
+        productId,
+        variantId: variantId ?? null,
+        url: result.url,
+        alt: alt ?? null,
+        order: (maxOrder._max.order ?? -1) + 1,
+      },
+    });
+
+    this.logger.log(`Image uploaded for product ${productId}: ${image.id}`);
+    return image;
+  }
+
+  async uploadMultipleImages(
+    productId: string,
+    files: Express.Multer.File[],
+  ) {
+    const uploads = files.map((file) => this.uploadImage(productId, file));
+    return Promise.all(uploads);
+  }
+
+  async deleteImage(productId: string, imageId: string) {
+    const image = await this.prisma.productImage.findFirst({
+      where: { id: imageId, productId },
+    });
+
+    if (!image) {
+      throw new NotFoundException('Image not found for this product');
+    }
+
+    const key = this.storage.extractKeyFromUrl(image.url);
+    if (key) {
+      await this.storage.delete(key);
+    }
+
+    await this.prisma.productImage.delete({ where: { id: imageId } });
+
+    this.logger.log(`Image ${imageId} deleted for product ${productId}`);
+  }
+
+  async reorderImages(
+    productId: string,
+    imageIds: string[],
+  ) {
+    const existing = await this.prisma.productImage.findMany({
+      where: { productId },
+      select: { id: true },
+    });
+
+    const existingIds = new Set(existing.map((img) => img.id));
+    const allValid = imageIds.every((id) => existingIds.has(id));
+    if (!allValid) {
+      throw new BadRequestException('Some image IDs do not belong to this product');
+    }
+
+    if (imageIds.length !== existing.length) {
+      throw new BadRequestException('Must include all product images');
+    }
+
+    await this.prisma.$transaction(
+      imageIds.map((id, index) =>
+        this.prisma.productImage.update({
+          where: { id },
+          data: { order: index },
+        }),
+      ),
+    );
+
+    this.logger.log(`Images reordered for product ${productId}`);
+  }
+
   async softDelete(id: string) {
     await this.findOne(id);
+
+    const images = await this.prisma.productImage.findMany({
+      where: { productId: id },
+      select: { url: true },
+    });
+
+    for (const image of images) {
+      const key = this.storage.extractKeyFromUrl(image.url);
+      if (key) {
+        try {
+          await this.storage.delete(key);
+        } catch (error) {
+          this.logger.warn(`Failed to delete S3 image ${key}: ${error}`);
+        }
+      }
+    }
 
     await this.prisma.product.update({
       where: { id },
       data: { deletedAt: new Date(), isActive: false },
     });
 
-    this.logger.log(`Product soft-deleted: ${id}`);
+    this.logger.log(`Product soft-deleted: ${id} with ${images.length} images cleaned from S3`);
   }
 }

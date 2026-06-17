@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit3, Trash2, Search } from 'lucide-react';
+import { Plus, Edit3, Trash2, Search, ImageIcon } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import Table from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
+import ProductImageManager from '@/components/admin/ProductImageManager';
 
 interface ProductCategory {
   id: string;
@@ -62,6 +63,7 @@ export default function AdminProductsPage() {
   const [meta, setMeta] = useState<PaginatedMeta>({ page: 1, limit: 10, total: 0, totalPages: 0 });
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [currentProductImages, setCurrentProductImages] = useState<{ id: string; url: string; alt: string | null; order: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -135,6 +137,14 @@ export default function AdminProductsPage() {
       categoryId: product.category?.id || '',
     });
     setEditId(product.id);
+    setCurrentProductImages(
+      (product.images ?? []).map((img) => ({
+        id: img.id,
+        url: img.url,
+        alt: img.alt,
+        order: (img as any).order ?? 0,
+      })),
+    );
     setEditOpen(true);
   };
 
@@ -377,46 +387,74 @@ export default function AdminProductsPage() {
         </div>
       </Modal>
 
-      <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Product" size="lg">
-        <div className="space-y-4">
-          <Input
-            label="Name"
-            value={form.name}
-            onChange={(e) => handleFormChange({ name: e.target.value })}
-            error={formErrors.name}
-          />
-          <Input
-            label="Slug"
-            value={form.slug}
-            onChange={(e) => handleFormChange({ slug: e.target.value })}
-            error={formErrors.slug}
-          />
-          <Input
-            label="Description"
-            value={form.description}
-            onChange={(e) => handleFormChange({ description: e.target.value })}
-          />
-          <Input
-            label="Base Price"
-            type="number"
-            step="0.01"
-            value={form.basePrice}
-            onChange={(e) => handleFormChange({ basePrice: e.target.value })}
-            error={formErrors.basePrice}
-          />
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
-            <select
-              value={form.categoryId}
-              onChange={(e) => handleFormChange({ categoryId: e.target.value })}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-            >
-              <option value="">No category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+      <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Product" size="xl">
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <Input
+              label="Name"
+              value={form.name}
+              onChange={(e) => handleFormChange({ name: e.target.value })}
+              error={formErrors.name}
+            />
+            <Input
+              label="Slug"
+              value={form.slug}
+              onChange={(e) => handleFormChange({ slug: e.target.value })}
+              error={formErrors.slug}
+            />
+            <Input
+              label="Description"
+              value={form.description}
+              onChange={(e) => handleFormChange({ description: e.target.value })}
+            />
+            <Input
+              label="Base Price"
+              type="number"
+              step="0.01"
+              value={form.basePrice}
+              onChange={(e) => handleFormChange({ basePrice: e.target.value })}
+              error={formErrors.basePrice}
+            />
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
+              <select
+                value={form.categoryId}
+                onChange={(e) => handleFormChange({ categoryId: e.target.value })}
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              >
+                <option value="">No category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
+
+          {editId && (
+            <div className="border-t border-cream-200 pt-4">
+              <div className="mb-3 flex items-center gap-2">
+                <ImageIcon size={16} className="text-ink-light" />
+                <h3 className="text-sm font-semibold text-ink">Imágenes del producto</h3>
+              </div>
+              <ProductImageManager
+                productId={editId}
+                images={currentProductImages}
+                onImagesChange={() => {
+                  api.get<{ images: typeof currentProductImages }>(`/products/${editId}`).then((res) => {
+                    setCurrentProductImages(
+                      (res as any).images?.map((img: any) => ({
+                        id: img.id,
+                        url: img.url,
+                        alt: img.alt,
+                        order: img.order ?? 0,
+                      })) ?? [],
+                    );
+                  });
+                }}
+              />
+            </div>
+          )}
+
           {formErrors.submit && (
             <p className="text-xs text-red-600">{formErrors.submit}</p>
           )}

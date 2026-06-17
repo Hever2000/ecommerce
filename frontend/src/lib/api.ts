@@ -137,6 +137,42 @@ async function request<T>(
   }
 }
 
+async function uploadRequest<T>(
+  endpoint: string,
+  formData: FormData,
+): Promise<T> {
+  const url = `${API_URL}${endpoint}`;
+
+  const headers: Record<string, string> = {};
+
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new ApiError(
+      data?.message || data?.error || response.statusText,
+      response.status,
+      data,
+    );
+  }
+
+  return data as T;
+}
+
 export const api = {
   get: <T>(endpoint: string, params?: Record<string, string>) =>
     request<T>(endpoint, { method: 'GET', params }),
@@ -152,4 +188,16 @@ export const api = {
 
   del: <T>(endpoint: string) =>
     request<T>(endpoint, { method: 'DELETE' }),
+
+  upload: <T>(endpoint: string, fieldName: string, file: File) => {
+    const formData = new FormData();
+    formData.append(fieldName, file);
+    return uploadRequest<T>(endpoint, formData);
+  },
+
+  uploadMultiple: <T>(endpoint: string, fieldName: string, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append(fieldName, file));
+    return uploadRequest<T>(endpoint, formData);
+  },
 };
