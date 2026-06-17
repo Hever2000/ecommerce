@@ -12,8 +12,22 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3001')
+    .split(',')
+    .map((o) => o.trim());
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+    origin(origin, callback) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app')
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });
