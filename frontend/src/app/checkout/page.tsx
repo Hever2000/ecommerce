@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo, useCallback } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -62,6 +62,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [paymentStep, setPaymentStep] = useState(false);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
+  const [initPoint, setInitPoint] = useState<string | null>(null);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
 
   const subtotal = items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0);
@@ -116,11 +117,6 @@ export default function CheckoutPage() {
   const nextIncomplete = PROGRESS_STEPS.find((s) => !completedSteps.has(s.number));
   const currentStep = nextIncomplete?.number ?? PROGRESS_STEPS.length;
 
-  const handleBrickError = useCallback((err: string) => {
-    setError(err);
-    setPaymentStep(false);
-  }, []);
-
   async function onSubmit(data: FormData) {
     if (items.length === 0) return;
     setSubmitting(true);
@@ -151,7 +147,9 @@ export default function CheckoutPage() {
       );
 
       setPreferenceId(preference.preferenceId);
+      setInitPoint(preference.initPoint);
       setCurrentOrderId(order.id);
+      setSubmitting(false);
       setPaymentStep(true);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -261,11 +259,23 @@ export default function CheckoutPage() {
 
                     <div className="p-6 sm:p-8">
                       {preferenceId && (
-                        <MpWalletBrick
-                          preferenceId={preferenceId}
-                          orderId={currentOrderId!}
-                          onError={handleBrickError}
-                        />
+                        <MpWalletBrick preferenceId={preferenceId} />
+                      )}
+
+                      {initPoint && (
+                        <div className="mt-6 text-center">
+                          <p className="mb-3 text-xs text-ink-lighter">
+                            Si el botón de pago no aparece, hacé clic acá:
+                          </p>
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            className="w-full"
+                            onClick={() => { window.location.href = initPoint; }}
+                          >
+                            Ir a pagar en Mercado Pago
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
