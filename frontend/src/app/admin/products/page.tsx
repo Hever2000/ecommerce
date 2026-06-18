@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit3, Trash2, Search, ImageIcon } from 'lucide-react';
+import { Plus, Edit3, Trash2, Search, ImageIcon, CheckCircle2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import Table from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
@@ -82,6 +82,8 @@ export default function AdminProductsPage() {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [editId, setEditId] = useState<string | null>(null);
+  const [createStep, setCreateStep] = useState<1 | 2>(1);
+  const [createdProductId, setCreatedProductId] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async (page = 1) => {
     setIsLoading(true);
@@ -124,6 +126,9 @@ export default function AdminProductsPage() {
 
   const openCreate = () => {
     resetForm();
+    setCreateStep(1);
+    setCreatedProductId(null);
+    setCurrentProductImages([]);
     setCreateOpen(true);
   };
 
@@ -166,16 +171,23 @@ export default function AdminProductsPage() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await api.post('/products', {
+      const product = await api.post<any>('/products', {
         name: form.name,
         slug: form.slug,
         description: form.description || undefined,
         basePrice: Number(form.basePrice),
         categoryId: form.categoryId || undefined,
       });
-      setCreateOpen(false);
-      resetForm();
-      fetchProducts();
+      setCreatedProductId(product.id);
+      setCurrentProductImages(
+        (product.images ?? []).map((img: any) => ({
+          id: img.id,
+          url: img.url,
+          alt: img.alt,
+          order: img.order ?? 0,
+        })),
+      );
+      setCreateStep(2);
     } catch (err) {
       setFormErrors({ submit: err instanceof ApiError ? err.message : 'Failed to create product' });
     } finally {
@@ -335,56 +347,100 @@ export default function AdminProductsPage() {
         }
       />
 
-      <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="New Product" size="lg">
-        <div className="space-y-4">
-          <Input
-            label="Name"
-            value={form.name}
-            onChange={(e) => handleFormChange({ name: e.target.value })}
-            error={formErrors.name}
-          />
-          <Input
-            label="Slug"
-            value={form.slug}
-            onChange={(e) => handleFormChange({ slug: e.target.value })}
-            error={formErrors.slug}
-          />
-          <Input
-            label="Description"
-            value={form.description}
-            onChange={(e) => handleFormChange({ description: e.target.value })}
-          />
-          <Input
-            label="Base Price"
-            type="number"
-            step="0.01"
-            value={form.basePrice}
-            onChange={(e) => handleFormChange({ basePrice: e.target.value })}
-            error={formErrors.basePrice}
-          />
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
-            <select
-              value={form.categoryId}
-              onChange={(e) => handleFormChange({ categoryId: e.target.value })}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-            >
-              <option value="">No category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+      <Modal
+        isOpen={createOpen}
+        onClose={() => { setCreateOpen(false); fetchProducts(); }}
+        title={createStep === 1 ? 'New Product' : 'Product Images'}
+        size={createStep === 1 ? 'lg' : 'xl'}
+      >
+        {createStep === 1 ? (
+          <div className="space-y-4">
+            <Input
+              label="Name"
+              value={form.name}
+              onChange={(e) => handleFormChange({ name: e.target.value })}
+              error={formErrors.name}
+            />
+            <Input
+              label="Slug"
+              value={form.slug}
+              onChange={(e) => handleFormChange({ slug: e.target.value })}
+              error={formErrors.slug}
+            />
+            <Input
+              label="Description"
+              value={form.description}
+              onChange={(e) => handleFormChange({ description: e.target.value })}
+            />
+            <Input
+              label="Base Price"
+              type="number"
+              step="0.01"
+              value={form.basePrice}
+              onChange={(e) => handleFormChange({ basePrice: e.target.value })}
+              error={formErrors.basePrice}
+            />
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
+              <select
+                value={form.categoryId}
+                onChange={(e) => handleFormChange({ categoryId: e.target.value })}
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              >
+                <option value="">No category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            {formErrors.submit && (
+              <p className="text-xs text-red-600">{formErrors.submit}</p>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={handleCreate} disabled={submitting}>
+                {submitting ? 'Creating...' : 'Create Product'}
+              </Button>
+            </div>
           </div>
-          {formErrors.submit && (
-            <p className="text-xs text-red-600">{formErrors.submit}</p>
-          )}
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button variant="primary" size="sm" onClick={handleCreate} disabled={submitting}>
-              {submitting ? 'Creating...' : 'Create Product'}
-            </Button>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <CheckCircle2 size={20} className="mt-0.5 flex-shrink-0 text-emerald-600" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-800">Producto creado exitosamente</p>
+                <p className="mt-1 text-xs text-emerald-600">
+                  Ahora podés agregar y ordenar las imágenes del producto.
+                </p>
+              </div>
+            </div>
+
+            {createdProductId && (
+              <ProductImageManager
+                productId={createdProductId}
+                images={currentProductImages}
+                onImagesChange={() => {
+                  api.get<any>(`/products/${createdProductId}`).then((res) => {
+                    setCurrentProductImages(
+                      (res.images ?? []).map((img: any) => ({
+                        id: img.id,
+                        url: img.url,
+                        alt: img.alt,
+                        order: img.order ?? 0,
+                      })),
+                    );
+                  });
+                }}
+              />
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="primary" size="sm" onClick={() => { setCreateOpen(false); fetchProducts(); }}>
+                Done
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
 
       <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Product" size="xl">
