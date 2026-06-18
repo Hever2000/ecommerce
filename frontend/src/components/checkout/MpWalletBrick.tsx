@@ -53,7 +53,7 @@ export default function MpWalletBrick({ preferenceId, orderId, onError }: MpWall
   return (
     <Wallet
       initialization={{ preferenceId }}
-      customization={{ texts: { valueProp: 'smart_option' } }}
+      customization={{ valueProp: 'convenience_all' }}
       onReady={() => setBrickError(null)}
     />
   );
