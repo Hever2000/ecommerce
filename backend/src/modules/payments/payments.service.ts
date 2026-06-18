@@ -55,6 +55,18 @@ export class PaymentsService {
       currency_id: 'ARS',
     }));
 
+    const shippingCost = Number(order.shippingCost);
+    if (shippingCost > 0) {
+      items.push({
+        id: 'shipping',
+        title: 'Costo de envío',
+        description: order.shippingType === 'PICKUP' ? 'Retiro en sucursal' : 'Envío a domicilio',
+        quantity: 1,
+        unit_price: shippingCost,
+        currency_id: 'ARS',
+      });
+    }
+
     const frontendUrl = this.config.get<string>('CORS_ORIGIN') || 'http://localhost:3001';
 
     let result;
@@ -65,7 +77,7 @@ export class PaymentsService {
           external_reference: order.id,
           notification_url: `${this.config.get<string>('API_URL') || 'http://localhost:3000'}/api/v1/payments/webhook`,
           back_urls: {
-            success: `${frontendUrl}/success`,
+            success: `${frontendUrl}/success?orderId=${order.id}`,
             pending: `${frontendUrl}/pending?orderId=${order.id}`,
             failure: `${frontendUrl}/failed?orderId=${order.id}`,
           },
@@ -111,33 +123,23 @@ export class PaymentsService {
     };
   }
 
-  async handleWebhook(
-    body: any,
+  validateWebhookSignature(
     headers: { 'x-signature'?: string; 'x-request-id'?: string },
     queryDataId?: string,
-  ) {
-    this.logger.log(`Webhook received: type=${body.type}, action=${body.action}`);
-
-    const { type, data } = body;
-
-    if (type !== 'payment' || !data?.id) {
-      this.logger.log(`Ignoring webhook type: ${type}`);
-      return { received: true };
+  ): void {
+    const webhookSecret = this.config.get<string>('MERCADO_PAGO_WEBHOOK_SECRET');
+    if (!webhookSecret) {
+      this.logger.warn('WEBHOOK_SECRET not configured — skipping signature validation');
+      return;
     }
-
     try {
-      const webhookSecret = this.config.get<string>('MERCADO_PAGO_WEBHOOK_SECRET');
-      if (webhookSecret) {
-        WebhookSignatureValidator.validate({
-          xSignature: headers['x-signature'],
-          xRequestId: headers['x-request-id'],
-          dataId: queryDataId,
-          secret: webhookSecret,
-          toleranceSeconds: 300,
-        });
-      } else {
-        this.logger.warn('WEBHOOK_SECRET not configured — skipping signature validation');
-      }
+      WebhookSignatureValidator.validate({
+        xSignature: headers['x-signature'],
+        xRequestId: headers['x-request-id'],
+        dataId: queryDataId,
+        secret: webhookSecret,
+        toleranceSeconds: 300,
+      });
     } catch (err) {
       if (err instanceof InvalidWebhookSignatureError) {
         this.logger.warn(`Webhook signature validation failed: ${err.reason}`);
@@ -145,8 +147,13 @@ export class PaymentsService {
       }
       throw err;
     }
+  }
 
-    const mpPaymentId = String(data.id);
+  async processWebhook(
+    type: string,
+    dataId: string,
+  ) {
+    const mpPaymentId = String(dataId);
 
     let mpPaymentData;
     try {

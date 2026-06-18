@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@mercadopago/sdk-react": "^1.0.7",
     "@react-oauth/google": "^0.13.5",
     "clsx": "^2.1.1",
     "framer-motion": "^12.40.0",
