@@ -149,11 +149,15 @@ export class ProductsService {
     ]);
 
     return {
-      data: products.map((p) => ({
-        ...p,
-        basePrice: Number(p.basePrice),
-        variants: this.transformVariants(p.variants),
-      })),
+      data: products.map((p) => {
+        const basePrice = Number(p.basePrice);
+        return {
+          ...p,
+          basePrice,
+          price: basePrice,
+          variants: this.transformVariants(p.variants),
+        };
+      }),
       meta: {
         page,
         limit,
@@ -164,9 +168,11 @@ export class ProductsService {
   }
 
   private transformProduct(product: any) {
+    const basePrice = Number(product.basePrice);
     return {
       ...product,
-      basePrice: Number(product.basePrice),
+      basePrice,
+      price: basePrice,
       variants: this.transformVariants(product.variants ?? []),
     };
   }

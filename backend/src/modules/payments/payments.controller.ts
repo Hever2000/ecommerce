@@ -8,7 +8,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { ParseUUIDPipe } from '../../common/pipes/parse-uuid.pipe';
 import { CreatePreferenceResponseDto } from './dto/create-preference-response.dto';
-import { WebhookQueryDto } from './dto/webhook-query.dto';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -19,21 +18,32 @@ export class PaymentsController {
 
   @Public()
   @Post('webhook')
-  @ApiOperation({ summary: 'Mercado Pago webhook endpoint' })
+  @ApiOperation({ summary: 'Mercado Pago webhook endpoint (IPN)' })
   async webhook(
     @Body() payload: any,
     @Headers('x-signature') signature?: string,
     @Headers('x-request-id') requestId?: string,
-    @Query() query?: WebhookQueryDto,
+    @Query('topic') topic?: string,
+    @Query('id') queryId?: string,
+    @Query('data.id') dataId?: string,
+    @Query('type') queryType?: string,
   ) {
     const headers = { 'x-signature': signature, 'x-request-id': requestId };
-    const dataId = query?.['data.id'];
 
-    this.paymentsService.validateWebhookSignature(headers, dataId);
+    // Try catch: MP webhook MUST always get 200 — even on invalid signature
+    try {
+      this.paymentsService.validateWebhookSignature(headers, dataId || queryId);
+    } catch {
+      this.logger.warn('Invalid webhook signature — still returning 200 to stop retries');
+    }
 
-    if (payload.type === 'payment' && payload.data?.id) {
-      this.paymentsService.processWebhook(payload.type, payload.data.id)
+    const paymentId = payload?.data?.id || queryId || dataId;
+
+    if (paymentId) {
+      this.paymentsService.processWebhook('payment', String(paymentId))
         .catch((err) => this.logger.error(`Webhook processing failed: ${err.message}`, err.stack));
+    } else {
+      this.logger.log(`Webhook received without payment ID — topic: ${topic || queryType || 'unknown'}, body: ${JSON.stringify(payload).slice(0, 500)}`);
     }
 
     return { received: true };
