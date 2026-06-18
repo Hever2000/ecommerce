@@ -139,12 +139,12 @@ export default function CheckoutPage() {
         })),
       });
 
-      clearCart();
-      clearCheckout();
-
       const preference = await api.post<{ preferenceId: string; initPoint: string }>(
         `/payments/${order.id}/preference`
       );
+
+      clearCart();
+      clearCheckout();
 
       setPreferenceId(preference.preferenceId);
       setInitPoint(preference.initPoint);

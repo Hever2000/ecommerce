@@ -171,9 +171,9 @@ export default function ProductDetailPage() {
 
             <div className="mt-6 flex items-baseline gap-4">
               <span className="font-display text-3xl font-bold text-ink">
-                ${(selectedVariant ? selectedVariant.price : product.price).toLocaleString('es-AR')}
+                ${((selectedVariant ? selectedVariant.price : product.price) ?? 0).toLocaleString('es-AR')}
               </span>
-              {product.comparePrice && (
+              {product.comparePrice != null && (
                 <span className="text-lg text-ink-lighter line-through">
                   ${product.comparePrice.toLocaleString('es-AR')}
                 </span>

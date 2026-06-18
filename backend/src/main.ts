@@ -3,6 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { SerializeInterceptor } from './common/interceptors/serialize.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -39,6 +40,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useGlobalInterceptors(new SerializeInterceptor());
 
   const config = new DocumentBuilder()
     .setTitle('Ecommerce AWS API')

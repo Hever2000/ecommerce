@@ -55,11 +55,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         </h3>
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-ink">
-            ${lowestPrice.toLocaleString('es-AR')}
+            ${(lowestPrice ?? 0).toLocaleString('es-AR')}
           </span>
-          {hasDiscount && (
+          {hasDiscount && product.comparePrice != null && (
             <span className="text-xs text-ink-lighter line-through">
-              ${product.comparePrice!.toLocaleString('es-AR')}
+              ${product.comparePrice.toLocaleString('es-AR')}
             </span>
           )}
         </div>
