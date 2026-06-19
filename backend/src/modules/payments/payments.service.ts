@@ -94,35 +94,35 @@ export class PaymentsService {
 
     let result;
     try {
-      const body: Record<string, any> = {
-        items,
-        external_reference: order.id,
-        notification_url: `${apiUrl}/api/v1/payments/webhook`,
-        back_urls: {
-          success: `${frontendUrl}/success?orderId=${order.id}`,
-          pending: `${frontendUrl}/pending?orderId=${order.id}`,
-          failure: `${frontendUrl}/failed?orderId=${order.id}`,
-        },
-        auto_return: 'approved',
-        purpose: 'wallet_purchase',
-        binary_mode: true,
-        statement_descriptor: 'STORE ECOMMERCE',
-        payment_methods: {
-          excluded_payment_types: [],
-          installments: 12,
-        },
-        payer: {
-          email: order.guestEmail,
-          first_name: order.guestFirstName,
-          last_name: order.guestLastName,
-          phone: {
-            area_code: '',
-            number: order.guestPhone,
+      result = await this.preference.create({
+        body: {
+          items,
+          external_reference: order.id,
+          notification_url: `${apiUrl}/api/v1/payments/webhook`,
+          back_urls: {
+            success: `${frontendUrl}/success?orderId=${order.id}`,
+            pending: `${frontendUrl}/pending?orderId=${order.id}`,
+            failure: `${frontendUrl}/failed?orderId=${order.id}`,
+          },
+          auto_return: 'approved' as const,
+          purpose: 'wallet_purchase',
+          binary_mode: true,
+          statement_descriptor: 'STORE ECOMMERCE',
+          payment_methods: {
+            excluded_payment_types: [],
+            installments: 12,
+          },
+          payer: {
+            email: order.guestEmail,
+            first_name: order.guestFirstName,
+            last_name: order.guestLastName,
+            phone: {
+              area_code: '',
+              number: order.guestPhone,
+            },
           },
         },
-      };
-
-      result = await this.preference.create({ body });
+      });
     } catch (err: any) {
       this.logger.error(`Failed to create MP preference: ${err.message}`, err.stack);
       const mpCause = err.cause || err.message;
