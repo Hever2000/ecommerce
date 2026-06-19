@@ -113,9 +113,9 @@ export class PaymentsService {
             installments: 12,
           },
           payer: {
+            name: order.guestFirstName,
+            surname: order.guestLastName,
             email: order.guestEmail,
-            first_name: order.guestFirstName,
-            last_name: order.guestLastName,
             phone: {
               area_code: '',
               number: order.guestPhone,
