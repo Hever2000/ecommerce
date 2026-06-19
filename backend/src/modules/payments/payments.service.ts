@@ -70,54 +70,67 @@ export class PaymentsService {
     const frontendUrl = this.config.get<string>('CORS_ORIGIN') || 'http://localhost:3001';
     const apiUrl = this.config.get<string>('API_URL') || 'http://localhost:3000';
 
-    const isProduction = frontendUrl.includes('://localhost') === false;
-
-    // ── Validación de URLs en producción ─────────────────────────────────
+    // ── Validación de URLs ────────────────────────────────────────
     // MP en producción RECHAZA back_urls y notification_url con HTTP o localhost
-    if (isProduction) {
-      for (const [label, url] of [
-        ['CORS_ORIGIN (frontendUrl)', frontendUrl],
-        ['API_URL', apiUrl],
-      ] as const) {
-        if (!url.startsWith('https://')) {
-          throw new BadRequestException(
-            `La variable de entorno ${label} debe usar HTTPS en producción. Valor actual: ${url}`
-          );
-        }
+    // NO confiar en NODE_ENV — validar las URLs que realmente se van a enviar
+    const usesLocalhost = frontendUrl.includes('://localhost') || apiUrl.includes('://localhost');
+    const usesHttp = !frontendUrl.startsWith('https://') || !apiUrl.startsWith('https://');
+    const isLikelyProduction = !usesLocalhost;
+
+    if (isLikelyProduction) {
+      if (usesHttp) {
+        throw new BadRequestException(
+          `MP requiere HTTPS en producción. Configurá las variables de entorno:\n` +
+          `  CORS_ORIGIN=${frontendUrl} → https://ecommerce-santiagocoronel.vercel.app\n` +
+          `  API_URL=${apiUrl} → https://ecommerce-xdi7.onrender.com`
+        );
       }
     } else {
       this.logger.warn(
         `Creando preferencia con URLs locales (${frontendUrl}, ${apiUrl}). ` +
-        'Para producción, configurá CORS_ORIGIN y API_URL con HTTPS.'
+        'En producción configurá CORS_ORIGIN y API_URL con HTTPS.'
       );
     }
 
     let result;
     try {
-      result = await this.preference.create({
-        body: {
-          items,
-          external_reference: order.id,
-          notification_url: `${apiUrl}/api/v1/payments/webhook`,
-          back_urls: {
-            success: `${frontendUrl}/success?orderId=${order.id}`,
-            pending: `${frontendUrl}/pending?orderId=${order.id}`,
-            failure: `${frontendUrl}/failed?orderId=${order.id}`,
-          },
-          auto_return: 'approved',
-          statement_descriptor: 'STORE ECOMMERCE',
-          payment_methods: {
-            excluded_payment_types: [],
-            installments: 12,
+      const body: Record<string, any> = {
+        items,
+        external_reference: order.id,
+        notification_url: `${apiUrl}/api/v1/payments/webhook`,
+        back_urls: {
+          success: `${frontendUrl}/success?orderId=${order.id}`,
+          pending: `${frontendUrl}/pending?orderId=${order.id}`,
+          failure: `${frontendUrl}/failed?orderId=${order.id}`,
+        },
+        auto_return: 'approved',
+        purpose: 'wallet_purchase',
+        binary_mode: true,
+        statement_descriptor: 'STORE ECOMMERCE',
+        payment_methods: {
+          excluded_payment_types: [],
+          installments: 12,
+        },
+        payer: {
+          email: order.guestEmail,
+          first_name: order.guestFirstName,
+          last_name: order.guestLastName,
+          phone: {
+            area_code: '',
+            number: order.guestPhone,
           },
         },
-      });
+      };
+
+      result = await this.preference.create({ body });
     } catch (err: any) {
       this.logger.error(`Failed to create MP preference: ${err.message}`, err.stack);
-      // ── Extraer error específico de MP si existe ──────────────────
       const mpCause = err.cause || err.message;
+      // Extraer mensaje legible del error de MP
+      const mpMessage = typeof mpCause === 'string' ? mpCause
+        : mpCause?.message || JSON.stringify(mpCause);
       throw new BadRequestException(
-        `Error al crear preferencia de pago: ${mpCause}`
+        `Error de Mercado Pago: ${mpMessage}`
       );
     }
 

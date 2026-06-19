@@ -57,7 +57,7 @@ export default function MpWalletBrick({ preferenceId }: MpWalletBrickProps) {
         </div>
       )}
       <Wallet
-        initialization={{ preferenceId }}
+        initialization={{ preferenceId, redirectMode: 'blank' }}
         customization={{ valueProp: 'convenience_all' }}
         onReady={() => {
           console.log('[MpWalletBrick] Wallet Brick listo');

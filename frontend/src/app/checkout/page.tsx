@@ -258,6 +258,21 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="p-6 sm:p-8">
+                      {error && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3"
+                        >
+                          <div className="flex items-start gap-2">
+                            <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                            </svg>
+                            <p className="text-xs text-red-600 whitespace-pre-line">{error}</p>
+                          </div>
+                        </motion.div>
+                      )}
+
                       {preferenceId && (
                         <MpWalletBrick preferenceId={preferenceId} />
                       )}
@@ -335,11 +350,11 @@ export default function CheckoutPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="rounded border border-red-200 bg-red-50 px-4 py-3"
                       >
-                        <div className="flex items-center gap-2">
-                          <svg className="h-4 w-4 flex-shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <div className="flex items-start gap-2">
+                          <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                           </svg>
-                          <p className="text-xs text-red-600">{error}</p>
+                          <p className="text-xs text-red-600 whitespace-pre-line">{error}</p>
                         </div>
                       </motion.div>
                     )}

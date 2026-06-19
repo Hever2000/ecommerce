@@ -5,6 +5,14 @@
       "type": "remote",
       "url": "https://mcp.supabase.com/mcp?project_ref=qllvwwubgnyxuhnvlyoa",
       "enabled": true
+    },
+    "mercadopago": {
+      "type": "remote",
+      "url": "https://mcp.mercadopago.com/mcp",
+      "headers": {
+        "Authorization": "Bearer APP_USR-4715027008253332-020908-0497ac28def0567921ed752dd5860bce-3191481527"
+      },
+      "enabled": true
     }
   }
 }
