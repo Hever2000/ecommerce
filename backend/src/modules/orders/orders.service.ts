@@ -1,6 +1,4 @@
-import {
-  Injectable, NotFoundException, BadRequestException, Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -32,7 +30,12 @@ export class OrdersService {
     const variantMap = new Map(variants.map((v) => [v.id, v]));
 
     let subtotal = 0;
-    const orderItemsData: { variantId: string; quantity: number; unitPrice: any; totalPrice: number }[] = [];
+    const orderItemsData: {
+      variantId: string;
+      quantity: number;
+      unitPrice: any;
+      totalPrice: number;
+    }[] = [];
 
     for (const item of dto.items) {
       const variant = variantMap.get(item.variantId);
@@ -208,9 +211,7 @@ export class OrdersService {
     };
 
     if (!validTransitions[order.status].includes(status)) {
-      throw new BadRequestException(
-        `Cannot transition from ${order.status} to ${status}`,
-      );
+      throw new BadRequestException(`Cannot transition from ${order.status} to ${status}`);
     }
 
     const updated = await this.prisma.order.update({

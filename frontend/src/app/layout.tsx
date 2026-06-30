@@ -6,13 +6,15 @@ import Footer from '@/components/layout/Footer';
 import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'STORE — Premium Apparel',
+  title: 'Premium Ballroom — Vanguardia en Danza',
   description:
-    'Premium clothing crafted for those who demand more. Quality, comfort, and style — redefined.',
-  keywords: 'clothing, apparel, premium, fashion, style',
+    'Indumentaria de baile de salón con visión high-fashion. Para competidores que entienden que el estilo es parte de la performance.',
+  keywords: 'ballroom, baile de salón, vestidos de competencia, ropa de baile, latin, standard, danza',
+  icons: { icon: '/favicon.svg' },
+  robots: { index: true, follow: true },
   openGraph: {
-    title: 'STORE — Premium Apparel',
-    description: 'Premium clothing crafted for those who demand more.',
+    title: 'Premium Ballroom — Vanguardia en Danza',
+    description: 'Indumentaria de baile de salón con visión high-fashion.',
     type: 'website',
   },
 };
@@ -21,8 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-cream-50 text-ink antialiased">
+    <html lang="es" suppressHydrationWarning>
+      <body className="min-h-screen bg-cream text-ink antialiased">
         <GoogleOAuthProvider clientId={googleClientId}>
           <AuthProvider>
             <Navbar />

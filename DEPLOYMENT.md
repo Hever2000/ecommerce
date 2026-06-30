@@ -8,13 +8,13 @@
 - npm 10+
 - Docker & Docker Compose (optional)
 - Supabase account (or local PostgreSQL)
-- AWS account (for S3/CloudFront — optional in dev)
+- Supabase account (for Storage — optional in dev)
 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/your-org/ecommerce-aws
-cd ecommerce-aws
+git clone https://github.com/your-org/premium-ballroom
+cd premium-ballroom
 
 # Backend
 cd backend
@@ -44,10 +44,8 @@ JWT_SECRET=your-secret-key-change-in-production
 JWT_ACCESS_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION=7d
 MERCADO_PAGO_ACCESS_TOKEN=your-mp-token
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-aws-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret
-AWS_S3_BUCKET=ecommerce-aws-products
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-role-key
 RESEND_API_KEY=re_xxx
 RESEND_FROM_EMAIL=noreply@ecommerce.com
 CORS_ORIGIN=http://localhost:3001
@@ -90,49 +88,6 @@ healthcheck:
 
 ---
 
-## AWS Infrastructure (Terraform)
-
-### Architecture
-
-```
-Route53 -> EC2 (Docker Compose) + CloudFront (S3 images)
-```
-
-### Terraform resources (`infra/terraform/`)
-
-| Resource                         | Description                          |
-| -------------------------------- | ------------------------------------ |
-| `aws_secretsmanager_secret`      | Stores JWT_SECRET, MP token, Resend  |
-| `aws_s3_bucket`                  | Product images (public-read)         |
-| `aws_cloudfront_distribution`    | CDN for S3 (OAC, HTTPS, compress)    |
-| `aws_instance`                   | EC2 t2.micro, Amazon Linux 2023      |
-| `aws_security_group`             | Ports 22, 80, 443, 3000, 3001        |
-| `aws_cloudwatch_log_group`       | Application logs (30 day retention)  |
-| `aws_cloudwatch_metric_alarm`    | CPU > 80% alert                      |
-
-### Deploy
-
-```bash
-cd infra/terraform
-
-terraform init
-terraform plan \
-  -var="ec2_key_name=my-key" \
-  -var="jwt_secret=..." \
-  -var="mercadopago_access_token=..." \
-  -var="resend_api_key=..."
-
-terraform apply
-```
-
-Outputs: `ec2_public_ip`, `s3_bucket_name`, `cloudfront_domain`, `secrets_arn`, `cloudwatch_log_group`.
-
-### User Data (`user-data.sh`)
-
-EC2 user-data script installs Docker + Docker Compose on boot, creates the app directory, and writes environment configuration. In production, `.env` and `docker-compose.yml` should be fetched from S3 or Secrets Manager.
-
----
-
 ## Environment Variables Reference
 
 | Variable                     | Required | Description                             |
@@ -145,10 +100,8 @@ EC2 user-data script installs Docker + Docker Compose on boot, creates the app d
 | `JWT_REFRESH_EXPIRATION`     | No       | Refresh token TTL (default: `7d`)       |
 | `GOOGLE_CLIENT_ID`           | No       | Google OAuth client ID                  |
 | `MERCADO_PAGO_ACCESS_TOKEN`  | Yes      | Mercado Pago API access token           |
-| `AWS_REGION`                 | Yes      | AWS region (default: `us-east-1`)       |
-| `AWS_ACCESS_KEY_ID`          | Yes*     | AWS access key (*if using S3)           |
-| `AWS_SECRET_ACCESS_KEY`      | Yes*     | AWS secret key (*if using S3)           |
-| `AWS_S3_BUCKET`              | Yes*     | S3 bucket name (*if using S3)           |
+| `SUPABASE_URL`               | Yes*     | Supabase project URL (*if using Storage)|
+| `SUPABASE_SERVICE_KEY`       | Yes*     | Supabase service role key (*if Storage) |
 | `RESEND_API_KEY`             | Yes*     | Resend API key (*if using email)        |
 | `RESEND_FROM_EMAIL`          | No       | Sender email (default: noreply@...)     |
 | `CORS_ORIGIN`                | Yes      | Allowed CORS origin (frontend URL)      |
@@ -162,9 +115,9 @@ EC2 user-data script installs Docker + Docker Compose on boot, creates the app d
 1. **Lint & Type Check** — `npm run lint`, `tsc --noEmit`
 2. **Unit Tests** — `npm run test`
 3. **Build** — `npm run build` (backend), `npm run build` (frontend)
-4. **Docker Build** — Build images, push to ECR
+4. **Docker Build** — Build images, push to registry
 5. **Migrate** — `npx prisma migrate deploy` (runs pending migrations)
-6. **Deploy** — SSH to EC2, pull images, `docker compose up -d`
+6. **Deploy** — Pull images on VPS, `docker compose up -d`
 
 ### Migration safety
 
@@ -175,26 +128,10 @@ EC2 user-data script installs Docker + Docker Compose on boot, creates the app d
 ### Secrets in CI
 
 - Use CI/CD secrets (GitHub Actions secrets, GitLab CI variables)
-- Terraform variables passed via `-var` or `.tfvars` files (never committed)
+- Use environment variables via Docker Compose or secrets management (never committed)
 
 ---
 
-## Monitoring (CloudWatch)
-
-### Logs
-
-The backend uses Winston with `winston-cloudwatch` transport to stream logs to CloudWatch:
-
-- Log group: `/ecommerce/{environment}`
-- Retention: 30 days
-- Accessible via AWS Console > CloudWatch > Log Groups
-
-### Metrics & Alarms
-
-| Alarm           | Metric          | Threshold    | Action                     |
-| --------------- | --------------- | ------------ | -------------------------- |
-| High CPU        | CPUUtilization  | > 80% for 2  | CloudWatch alarm trigger   |
-
-### Healthchecks
+## Healthchecks
 
 Docker Compose runs healthchecks every 30s. Failed healthchecks trigger container restarts (`restart: unless-stopped`).

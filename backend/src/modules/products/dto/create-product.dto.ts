@@ -1,5 +1,11 @@
 import {
-  IsString, IsNumber, IsOptional, IsUUID, IsArray, ValidateNested, Min,
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+  IsArray,
+  ValidateNested,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -9,7 +15,7 @@ class CreateVariantDto {
   @IsString()
   sku: string;
 
-  @ApiProperty({ example: 14999.00 })
+  @ApiProperty({ example: 14999.0 })
   @IsNumber()
   @Min(0)
   price: number;
@@ -19,7 +25,9 @@ class CreateVariantDto {
   @Min(0)
   stock: number;
 
-  @ApiPropertyOptional({ example: ['f0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000005'] })
+  @ApiPropertyOptional({
+    example: ['f0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000005'],
+  })
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
@@ -46,7 +54,7 @@ export class CreateProductDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: 14999.00 })
+  @ApiProperty({ example: 14999.0 })
   @IsNumber()
   @Min(0)
   basePrice: number;

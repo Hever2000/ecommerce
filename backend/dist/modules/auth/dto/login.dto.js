@@ -24,6 +24,9 @@ __decorate([
     (0, swagger_1.ApiProperty)({ example: 'Admin123!' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(6),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+        message: 'La contraseña debe contener al menos una mayúscula, una minúscula y un número',
+    }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
 //# sourceMappingURL=login.dto.js.map

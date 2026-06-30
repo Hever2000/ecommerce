@@ -80,7 +80,7 @@ chore/update-dependencies
 ## Project Structure
 
 ```
-ecommerce-aws/
+premium-ballroom/
 ├── backend/                    # NestJS API
 │   ├── prisma/                 # Schema, migrations, seed
 │   ├── src/
@@ -94,7 +94,6 @@ ecommerce-aws/
 │       ├── components/         # React components
 │       ├── lib/                # Utilities
 │       └── types/              # TypeScript types
-├── infra/terraform/            # AWS IaC
 └── docs/                       # Supplementary documentation
 ```
 
@@ -127,4 +126,4 @@ npm run test:cov
 
 ## Questions?
 
-Open a [GitHub Discussion](https://github.com/your-org/ecommerce-aws/discussions) for questions, ideas, or general discussion.
+Open a [GitHub Discussion](https://github.com/your-org/premium-ballroom/discussions) for questions, ideas, or general discussion.

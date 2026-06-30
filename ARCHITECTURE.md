@@ -11,10 +11,10 @@
 | Auth         | Passport.js, JWT (access + refresh)  |
 | Payments     | Mercado Pago SDK                     |
 | Email        | Resend                               |
-| Storage      | AWS S3 + CloudFront                  |
+| Storage      | Supabase Storage                     |
 | Container    | Docker, Docker Compose               |
-| Infra        | Terraform (AWS)                      |
-| Monitoring   | CloudWatch, Winston                  |
+| Infra        | Docker Compose                       |
+| Monitoring   | Winston                              |
 | API Docs     | Swagger / OpenAPI                    |
 
 ## Monolito Modular
@@ -51,7 +51,7 @@ The project follows a **Monolito Modular** pattern — a single deployable unit 
 | Payments     | Mercado Pago webhook, preference creation, payment tracking      |
 | Shipping     | Cost calculation by province, pickup option                      |
 | Email        | Transactional emails via Resend (order confirmation, etc.)       |
-| Uploads      | S3 file upload (single/multiple), image deletion                 |
+| Uploads      | Supabase Storage upload (single/multiple), image deletion        |
 | Audit        | Immutable action log for admin operations                        |
 | Health       | Liveness (`/health`) and readiness (`/ready`) checks             |
 
@@ -104,13 +104,13 @@ Dashboard                  Backend                   Database
 ### Image Upload Flow
 
 ```
-Dashboard                  Backend                    S3
-  |                          |                          |
-  |-- POST /api/v1/uploads/  |  Validate file (5MB    |
-  |   single (multipart)     |  max, jpg/png/webp)     |
-  |                          |-- PUT object ---------->|
-  |                          |  { public-read ACL }    |
-  |<-- { url } --------------|                          |
+Dashboard                  Backend                     Supabase Storage
+  |                          |                              |
+  |-- POST /api/v1/uploads/  |  Validate file (5MB         |
+  |   single (multipart)     |  max, jpg/png/webp)         |
+  |                          |-- Upload object ----------->|
+  |                          |  { public bucket }          |
+  |<-- { url } --------------|                              |
 ```
 
 ## RBAC Model
@@ -181,30 +181,19 @@ Controller -> Service -> Prisma -> PostgreSQL
 ```
 Internet
   |
-  +-- DNS (Route53)
-  |
-  +-- EC2 (Docker Compose)
-  |     +-- Nginx/Caddy (reverse proxy)
+  +-- VPS (Docker Compose)
+  |     +-- Nginx (reverse proxy, SSL termination)
   |     +-- Backend container (port 3000)
   |     +-- Frontend container (port 3001)
   |
-  +-- S3 + CloudFront (static images, CDN)
-  |
-  +-- Secrets Manager (JWT, MP, Resend keys)
-  |
-  +-- CloudWatch (logs + metrics + alarms)
-  |
-  +-- Supabase (managed PostgreSQL)
+  +-- Supabase (managed PostgreSQL + Storage)
 ```
 
-### Terraform creates
+### Docker Compose services
 
-- EC2 instance (t2.micro, Amazon Linux 2023)
-- Security group (SSH, HTTP, HTTPS, 3000, 3001)
-- S3 bucket (public-read, CORS configured)
-- CloudFront distribution (OAC, HTTPS, compress)
-- Secrets Manager (JWT, Mercado Pago, Resend)
-- CloudWatch log group + CPU alarm
+- **Backend** — NestJS API, healthcheck, migrated via `prisma migrate deploy`
+- **Frontend** — Next.js standalone build, served via Nginx
+- **Nginx** — reverse proxy, SSL (Let's Encrypt), routes `/api/` → backend, `/` → frontend
 
 ## Architecture Decision Records
 
@@ -217,6 +206,6 @@ Significant decisions are documented in [docs/DECISIONS.md](docs/DECISIONS.md):
 | ADR-003 | Guest Checkout over Customer Accounts |
 | ADR-004 | EAV for Product Variants over Fixed Columns |
 | ADR-005 | Webhook-Only Payment Updates over Frontend Trust |
-| ADR-006 | S3 + CloudFront for Images over Local Storage |
+| ADR-006 | Supabase Storage for Images over Local Storage |
 | ADR-007 | Supabase PostgreSQL over Self-Managed RDS |
 | ADR-008 | RBAC with Granular Permissions |

@@ -20,7 +20,7 @@ export default function CartItemComponent({ item }: CartItemProps) {
       <div className="h-28 w-28 flex-shrink-0 overflow-hidden bg-cream-200 sm:h-36 sm:w-36">
         <div
           className="h-full w-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${item.variant.image || item.product.images[0] || ''})` }}
+          style={{ backgroundImage: `url(${item.variant.image || item.product.images[0]?.url || ''})` }}
         />
       </div>
 

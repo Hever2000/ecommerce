@@ -1,10 +1,10 @@
 import { PaymentsService } from './payments.service';
 import { CreatePreferenceResponseDto } from './dto/create-preference-response.dto';
-import { WebhookQueryDto } from './dto/webhook-query.dto';
 export declare class PaymentsController {
     private readonly paymentsService;
+    private readonly logger;
     constructor(paymentsService: PaymentsService);
-    webhook(payload: any, signature?: string, requestId?: string, query?: WebhookQueryDto): Promise<{
+    webhook(payload: any, signature?: string, requestId?: string, topic?: string, queryId?: string, dataId?: string, queryType?: string): Promise<{
         received: boolean;
     }>;
     createPreference(orderId: string): Promise<CreatePreferenceResponseDto>;

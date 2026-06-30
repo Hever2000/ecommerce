@@ -34,13 +34,13 @@ function PendingContent() {
         const res = await api.get<Order>(`/orders/${orderId}`);
         setOrder(res);
 
-        if (res.status === 'paid') {
+        if (res.status === 'PAID') {
           clearInterval(intervalRef.current!);
           router.push(`/success?orderId=${orderId}`);
           return;
         }
 
-        if (res.status === 'failed' || res.status === 'cancelled') {
+        if (res.status === 'FAILED' || res.status === 'CANCELLED') {
           clearInterval(intervalRef.current!);
           router.push(`/failed?orderId=${orderId}`);
           return;
@@ -147,7 +147,7 @@ function PendingContent() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-ink-lighter">Orden</span>
-                <span className="font-medium text-ink">#{order.orderNumber || order.id.slice(0, 8)}</span>
+                <span className="font-medium text-ink">#{order.id.slice(0, 8)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-ink-lighter">Total</span>

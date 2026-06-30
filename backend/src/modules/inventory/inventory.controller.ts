@@ -1,6 +1,4 @@
-import {
-  Controller, Get, Post, Body, Param, Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InventoryService } from './inventory.service';
 import { AdjustInventoryDto } from './dto/adjust-inventory.dto';
@@ -19,10 +17,7 @@ export class InventoryController {
   @Post('adjust')
   @Permissions('ADJUST_INVENTORY')
   @ApiOperation({ summary: 'Adjust stock for a variant' })
-  adjust(
-    @Body() dto: AdjustInventoryDto,
-    @CurrentUser() user: any,
-  ) {
+  adjust(@Body() dto: AdjustInventoryDto, @CurrentUser() user: any) {
     return this.inventoryService.adjust(dto, user?.id);
   }
 

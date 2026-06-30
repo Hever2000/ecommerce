@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const throttler_1 = require("@nestjs/throttler");
 const core_1 = require("@nestjs/core");
+const request_id_middleware_1 = require("./common/middleware/request-id.middleware");
 const prisma_module_1 = require("./prisma/prisma.module");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
@@ -27,9 +28,12 @@ const orders_module_1 = require("./modules/orders/orders.module");
 const payments_module_1 = require("./modules/payments/payments.module");
 const shipping_module_1 = require("./modules/shipping/shipping.module");
 const email_module_1 = require("./modules/email/email.module");
-const uploads_module_1 = require("./modules/uploads/uploads.module");
+const supabase_storage_module_1 = require("./modules/supabase-storage/supabase-storage.module");
 const audit_module_1 = require("./modules/audit/audit.module");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(request_id_middleware_1.RequestIdMiddleware).forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
@@ -39,10 +43,12 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
                 envFilePath: '.env',
             }),
-            throttler_1.ThrottlerModule.forRoot([{
+            throttler_1.ThrottlerModule.forRoot([
+                {
                     ttl: 60000,
                     limit: 100,
-                }]),
+                },
+            ]),
             prisma_module_1.PrismaModule,
             health_module_1.HealthModule,
             auth_module_1.AuthModule,
@@ -56,7 +62,7 @@ exports.AppModule = AppModule = __decorate([
             payments_module_1.PaymentsModule,
             shipping_module_1.ShippingModule,
             email_module_1.EmailModule,
-            uploads_module_1.UploadsModule,
+            supabase_storage_module_1.SupabaseStorageModule,
             audit_module_1.AuditModule,
         ],
         providers: [

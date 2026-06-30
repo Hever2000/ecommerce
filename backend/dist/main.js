@@ -5,6 +5,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const helmet_1 = require("helmet");
 const app_module_1 = require("./app.module");
+const serialize_interceptor_1 = require("./common/interceptors/serialize.interceptor");
 async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
@@ -15,13 +16,11 @@ async function bootstrap() {
         .map((o) => o.trim());
     app.enableCors({
         origin(origin, callback) {
-            if (!origin ||
-                allowedOrigins.includes(origin) ||
-                origin.endsWith('.vercel.app')) {
+            if (!origin || allowedOrigins.includes(origin)) {
                 callback(null, true);
             }
             else {
-                callback(new Error(`Origin ${origin} not allowed by CORS`));
+                callback(new Error(`Origin not allowed by CORS`));
             }
         },
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -32,6 +31,7 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
         transform: true,
     }));
+    app.useGlobalInterceptors(new serialize_interceptor_1.SerializeInterceptor());
     const config = new swagger_1.DocumentBuilder()
         .setTitle('Ecommerce AWS API')
         .setDescription('Full-featured ecommerce REST API')

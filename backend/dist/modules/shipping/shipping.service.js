@@ -12,10 +12,10 @@ let ShippingService = class ShippingService {
     constructor() {
         this.rates = {
             'Buenos Aires': { baseCost: 500, costPerItem: 200, freeShippingThreshold: 30000 },
-            'CABA': { baseCost: 400, costPerItem: 150, freeShippingThreshold: 25000 },
-            'Córdoba': { baseCost: 800, costPerItem: 250, freeShippingThreshold: 35000 },
+            CABA: { baseCost: 400, costPerItem: 150, freeShippingThreshold: 25000 },
+            Córdoba: { baseCost: 800, costPerItem: 250, freeShippingThreshold: 35000 },
             'Santa Fe': { baseCost: 700, costPerItem: 250, freeShippingThreshold: 35000 },
-            'Mendoza': { baseCost: 1000, costPerItem: 300, freeShippingThreshold: 40000 },
+            Mendoza: { baseCost: 1000, costPerItem: 300, freeShippingThreshold: 40000 },
         };
         this.defaultRate = {
             baseCost: 1200,
@@ -26,7 +26,12 @@ let ShippingService = class ShippingService {
     calculateCost(province, subtotal, itemCount) {
         const rate = this.rates[province] || this.defaultRate;
         if (subtotal >= rate.freeShippingThreshold) {
-            return { cost: 0, method: 'HOME_DELIVERY', estimatedDays: this.getEstimatedDays(province), freeShipping: true };
+            return {
+                cost: 0,
+                method: 'HOME_DELIVERY',
+                estimatedDays: this.getEstimatedDays(province),
+                freeShipping: true,
+            };
         }
         const cost = rate.baseCost + rate.costPerItem * itemCount;
         return {
@@ -47,10 +52,10 @@ let ShippingService = class ShippingService {
     getEstimatedDays(province) {
         const estimates = {
             'Buenos Aires': 3,
-            'CABA': 2,
-            'Córdoba': 5,
+            CABA: 2,
+            Córdoba: 5,
             'Santa Fe': 4,
-            'Mendoza': 7,
+            Mendoza: 7,
         };
         return estimates[province] || 10;
     }

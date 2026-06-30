@@ -29,7 +29,7 @@ export default function OrderSummary({ items, subtotal, shippingMethod, children
 
         <div className="space-y-5 p-6 sm:p-8">
           {items.map((item, index) => {
-            const image = item.variant.image || item.product.images[0];
+            const image = item.variant.image || item.product.images[0]?.url || '';
             const variantLabel = Object.values(item.variant.attributes).join(', ');
 
             return (

@@ -16,7 +16,7 @@ export declare class AuthService {
             email: string;
             firstName: string;
             lastName: string;
-            role: any;
+            role: string;
             permissions: string[];
         };
         accessToken: string;
@@ -28,7 +28,7 @@ export declare class AuthService {
             email: string;
             firstName: string;
             lastName: string;
-            role: any;
+            role: string;
             permissions: string[];
         };
         accessToken: string;
@@ -41,7 +41,7 @@ export declare class AuthService {
             firstName: string;
             lastName: string;
             avatar: string | null;
-            role: any;
+            role: string;
             permissions: string[];
         };
         accessToken: string;
@@ -52,7 +52,10 @@ export declare class AuthService {
     }>;
     refresh(refreshToken: string): Promise<{
         accessToken: string;
+        refreshToken: string;
     }>;
-    private extractRolesAndPermissions;
+    private getUserWithPermissions;
     private generateTokens;
+    private hashToken;
+    private storeRefreshToken;
 }

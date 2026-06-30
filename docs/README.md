@@ -1,4 +1,4 @@
-# Ecommerce AWS
+# Premium Ballroom
 
 Full-featured ecommerce platform with guest checkout, RBAC admin panel, and Mercado Pago payments.
 
@@ -33,14 +33,14 @@ npm run dev
 | Auth         | JWT (access + refresh tokens)           |
 | Payments     | Mercado Pago                            |
 | Email        | Resend                                  |
-| Storage      | AWS S3 + CloudFront                     |
-| Infra        | Docker, Terraform (AWS)                 |
-| Monitoring   | CloudWatch + Winston                    |
+| Storage      | Supabase Storage                        |
+| Infra        | Docker Compose                          |
+| Monitoring   | Winston                                 |
 
 ## Project Structure
 
 ```
-ecommerce-aws/
+premium-ballroom/
 ├── backend/                    # NestJS API
 │   ├── prisma/
 │   │   ├── schema.prisma       # Data model (single source of truth)
@@ -68,7 +68,7 @@ ecommerce-aws/
 │           ├── payments/       # Mercado Pago webhooks
 │           ├── shipping/       # Cost calculation
 │           ├── email/          # Transactional emails
-│           ├── uploads/        # S3 file uploads
+│           ├── uploads/        # Supabase Storage file uploads
 │           ├── audit/          # Action log
 │           └── health/         # Liveness + readiness
 ├── frontend/                   # Next.js 14 app
@@ -77,8 +77,6 @@ ecommerce-aws/
 │       │   ├── api.ts          # HTTP client (auto auth token)
 │       │   └── cart-store.ts   # Zustand cart (persisted)
 │       └── types/              # TypeScript type definitions
-├── infra/
-│   └── terraform/              # AWS IaC (EC2, S3, CloudFront, Secrets, CloudWatch)
 └── docker-compose.yml          # Backend + Frontend containers
 ```
 
@@ -115,7 +113,7 @@ ecommerce-aws/
 | `DECISIONS.md`    | 8 Architecture Decision Records (ADR-001 through ADR-008) |
 | `DATABASE.md`     | ERD, table relationships, EAV model, indexes, enums, seed data |
 | `API.md`          | All endpoints with methods, paths, auth requirements, request/response examples |
-| `DEPLOYMENT.md`   | Local setup, Docker Compose, Terraform, environment variables, CI/CD, monitoring |
+| `DEPLOYMENT.md`   | Local setup, Docker Compose, environment variables, CI/CD |
 | `SECURITY.md`     | JWT auth, RBAC guards, rate limiting, Helmet, CORS, validation, webhook security, secrets, audit |
 
 ## API Documentation

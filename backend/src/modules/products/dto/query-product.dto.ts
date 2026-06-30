@@ -1,6 +1,8 @@
-import { IsOptional, IsString, IsNumber, IsBoolean, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsBoolean, Min, Max, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+
+const SORT_BY_WHITELIST = ['createdAt', 'updatedAt', 'name', 'basePrice'] as const;
 
 export class QueryProductDto {
   @ApiPropertyOptional()
@@ -18,12 +20,6 @@ export class QueryProductDto {
   @Type(() => Boolean)
   @IsBoolean()
   published?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  featured?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -57,10 +53,12 @@ export class QueryProductDto {
   @ApiPropertyOptional({ default: 'createdAt' })
   @IsOptional()
   @IsString()
+  @IsIn(SORT_BY_WHITELIST)
   sortBy?: string = 'createdAt';
 
   @ApiPropertyOptional({ default: 'desc' })
   @IsOptional()
   @IsString()
+  @IsIn(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
 }

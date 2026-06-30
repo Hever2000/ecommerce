@@ -56,31 +56,70 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             unit_price: Number(item.unitPrice),
             currency_id: 'ARS',
         }));
+        const shippingCost = Number(order.shippingCost);
+        if (shippingCost > 0) {
+            items.push({
+                id: 'shipping',
+                title: 'Costo de envío',
+                description: order.shippingType === 'PICKUP' ? 'Retiro en sucursal' : 'Envío a domicilio',
+                quantity: 1,
+                unit_price: shippingCost,
+                currency_id: 'ARS',
+            });
+        }
         const frontendUrl = this.config.get('CORS_ORIGIN') || 'http://localhost:3001';
+        const apiUrl = this.config.get('API_URL') || 'http://localhost:3000';
+        const usesLocalhost = frontendUrl.includes('://localhost') || apiUrl.includes('://localhost');
+        const usesHttp = !frontendUrl.startsWith('https://') || !apiUrl.startsWith('https://');
+        const isLikelyProduction = !usesLocalhost;
+        if (isLikelyProduction) {
+            if (usesHttp) {
+                throw new common_1.BadRequestException(`MP requiere HTTPS en producción. Configurá las variables de entorno:\n` +
+                    `  CORS_ORIGIN=${frontendUrl} → https://ecommerce-santiagocoronel.vercel.app\n` +
+                    `  API_URL=${apiUrl} → https://ecommerce-xdi7.onrender.com`);
+            }
+        }
+        else {
+            this.logger.warn(`Creando preferencia con URLs locales (${frontendUrl}, ${apiUrl}). ` +
+                'En producción configurá CORS_ORIGIN y API_URL con HTTPS.');
+        }
         let result;
         try {
             result = await this.preference.create({
                 body: {
                     items,
                     external_reference: order.id,
-                    notification_url: `${this.config.get('API_URL') || 'http://localhost:3000'}/api/v1/payments/webhook`,
+                    notification_url: `${apiUrl}/api/v1/payments/webhook`,
                     back_urls: {
-                        success: `${frontendUrl}/success`,
+                        success: `${frontendUrl}/success?orderId=${order.id}`,
                         pending: `${frontendUrl}/pending?orderId=${order.id}`,
                         failure: `${frontendUrl}/failed?orderId=${order.id}`,
                     },
                     auto_return: 'approved',
+                    purpose: 'wallet_purchase',
+                    binary_mode: true,
                     statement_descriptor: 'STORE ECOMMERCE',
                     payment_methods: {
                         excluded_payment_types: [],
                         installments: 12,
+                    },
+                    payer: {
+                        name: order.guestFirstName,
+                        surname: order.guestLastName,
+                        email: order.guestEmail,
+                        phone: {
+                            area_code: '',
+                            number: order.guestPhone,
+                        },
                     },
                 },
             });
         }
         catch (err) {
             this.logger.error(`Failed to create MP preference: ${err.message}`, err.stack);
-            throw new common_1.BadRequestException(`Error creating payment preference: ${err.message}`);
+            const mpCause = err.cause || err.message;
+            const mpMessage = typeof mpCause === 'string' ? mpCause : mpCause?.message || JSON.stringify(mpCause);
+            throw new common_1.BadRequestException(`Error de Mercado Pago: ${mpMessage}`);
         }
         if (!result.id || !result.init_point) {
             throw new common_1.BadRequestException('Mercado Pago did not return a valid preference');
@@ -107,27 +146,24 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             total: Number(order.total),
         };
     }
-    async handleWebhook(body, headers, queryDataId) {
-        this.logger.log(`Webhook received: type=${body.type}, action=${body.action}`);
-        const { type, data } = body;
-        if (type !== 'payment' || !data?.id) {
-            this.logger.log(`Ignoring webhook type: ${type}`);
-            return { received: true };
+    validateWebhookSignature(headers, queryDataId) {
+        const webhookSecret = this.config.get('MERCADO_PAGO_WEBHOOK_SECRET');
+        if (!webhookSecret) {
+            this.logger.warn('WEBHOOK_SECRET not configured — skipping signature validation');
+            return;
+        }
+        if (!headers['x-signature']) {
+            this.logger.warn('No x-signature header — skipping signature validation');
+            return;
         }
         try {
-            const webhookSecret = this.config.get('MERCADO_PAGO_WEBHOOK_SECRET');
-            if (webhookSecret) {
-                mercadopago_2.WebhookSignatureValidator.validate({
-                    xSignature: headers['x-signature'],
-                    xRequestId: headers['x-request-id'],
-                    dataId: queryDataId,
-                    secret: webhookSecret,
-                    toleranceSeconds: 300,
-                });
-            }
-            else {
-                this.logger.warn('WEBHOOK_SECRET not configured — skipping signature validation');
-            }
+            mercadopago_2.WebhookSignatureValidator.validate({
+                xSignature: headers['x-signature'],
+                xRequestId: headers['x-request-id'],
+                dataId: queryDataId,
+                secret: webhookSecret,
+                toleranceSeconds: 300,
+            });
         }
         catch (err) {
             if (err instanceof mercadopago_2.InvalidWebhookSignatureError) {
@@ -136,7 +172,9 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             }
             throw err;
         }
-        const mpPaymentId = String(data.id);
+    }
+    async processWebhook(type, dataId) {
+        const mpPaymentId = String(dataId);
         let mpPaymentData;
         try {
             mpPaymentData = await this.mpPayment.get({ id: mpPaymentId });
@@ -172,6 +210,22 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         const mpStatus = mpPaymentData.status || 'pending';
         const mpStatusDetail = mpPaymentData.status_detail || null;
         const mpId = mpPaymentData.id != null ? String(mpPaymentData.id) : mpPaymentId;
+        if (mpStatus === 'approved' && payment.order) {
+            const payerEmail = mpPaymentData.payer?.email;
+            if (payerEmail && payerEmail !== payment.order.guestEmail) {
+                this.logger.warn(`Payer email mismatch for order ${payment.order.id}: ` +
+                    `MP says ${payerEmail}, order has ${payment.order.guestEmail} — rejecting`);
+                await this.prisma.payment.update({
+                    where: { id: payment.id },
+                    data: {
+                        mpPaymentId: mpId,
+                        mpStatus: 'rejected',
+                        mpStatusDetail: 'payer_email_mismatch',
+                    },
+                });
+                return { received: true };
+            }
+        }
         await this.prisma.payment.update({
             where: { id: payment.id },
             data: {

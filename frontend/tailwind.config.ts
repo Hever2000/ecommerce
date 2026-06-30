@@ -9,37 +9,38 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          DEFAULT: '#0a1628',
-          light: '#1a2a4a',
-          lighter: '#2a3a5a',
-        },
         cream: {
-          50: '#faf9f6',
-          100: '#f5f4ef',
-          200: '#e8e6dc',
-          300: '#d4d0bf',
-        },
-        accent: {
-          DEFAULT: '#c8a87c',
-          light: '#dcc8a8',
-          dark: '#b09060',
+          DEFAULT: '#FDFBF7',
+          50: '#FDFBF7',
+          100: '#F8F5F0',
+          200: '#EDE8DF',
+          300: '#D4CFC4',
         },
         ink: {
-          DEFAULT: '#1a1a1a',
-          light: '#6b6b6b',
-          lighter: '#9ca3af',
+          DEFAULT: '#000000',
+          light: '#404040',
+          lighter: '#8C8C8C',
         },
-        border: '#e5e3db',
+        accent: {
+          DEFAULT: '#4A0E17',
+          light: '#6B1A26',
+          dark: '#35060D',
+        },
+        gold: {
+          DEFAULT: '#D4AF37',
+          light: '#E0C55A',
+          dark: '#B8962E',
+        },
+        border: '#E5E0D6',
       },
       fontFamily: {
         display: ['Playfair Display', 'Georgia', 'serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       fontSize: {
-        'display': ['5rem', { lineHeight: '1', letterSpacing: '-0.03em' }],
-        'display-sm': ['3.5rem', { lineHeight: '1.05', letterSpacing: '-0.02em' }],
-        'hero': ['4.5rem', { lineHeight: '1', letterSpacing: '-0.03em' }],
+        'display': ['5rem', { lineHeight: '0.95', letterSpacing: '-0.04em' }],
+        'display-sm': ['3.5rem', { lineHeight: '1', letterSpacing: '-0.03em' }],
+        'hero': ['4.5rem', { lineHeight: '0.95', letterSpacing: '-0.04em' }],
         'hero-sm': ['3rem', { lineHeight: '1.05', letterSpacing: '-0.02em' }],
       },
       spacing: {

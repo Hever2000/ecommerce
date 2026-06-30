@@ -7,23 +7,23 @@ export declare class UsersController {
     create(dto: CreateUserDto): Promise<{
         userRoles: ({
             role: {
-                description: string | null;
-                name: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                name: string;
+                description: string | null;
             };
         } & {
             roleId: string;
             userId: string;
         })[];
+        id: string;
         email: string;
         firstName: string;
         lastName: string;
-        id: string;
-        googleId: string | null;
         phone: string | null;
         avatar: string | null;
+        googleId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -33,23 +33,23 @@ export declare class UsersController {
         data: {
             userRoles: ({
                 role: {
-                    description: string | null;
-                    name: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    name: string;
+                    description: string | null;
                 };
             } & {
                 roleId: string;
                 userId: string;
             })[];
+            id: string;
             email: string;
             firstName: string;
             lastName: string;
-            id: string;
-            googleId: string | null;
             phone: string | null;
             avatar: string | null;
+            googleId: string | null;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -65,23 +65,23 @@ export declare class UsersController {
     findOne(id: string): Promise<{
         userRoles: ({
             role: {
-                description: string | null;
-                name: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                name: string;
+                description: string | null;
             };
         } & {
             roleId: string;
             userId: string;
         })[];
+        id: string;
         email: string;
         firstName: string;
         lastName: string;
-        id: string;
-        googleId: string | null;
         phone: string | null;
         avatar: string | null;
+        googleId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -90,23 +90,23 @@ export declare class UsersController {
     update(id: string, dto: UpdateUserDto): Promise<{
         userRoles: ({
             role: {
-                description: string | null;
-                name: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                name: string;
+                description: string | null;
             };
         } & {
             roleId: string;
             userId: string;
         })[];
+        id: string;
         email: string;
         firstName: string;
         lastName: string;
-        id: string;
-        googleId: string | null;
         phone: string | null;
         avatar: string | null;
+        googleId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;

@@ -11,14 +11,19 @@ import { CheckCircle, Package, ArrowRight } from 'lucide-react';
 import type { Order } from '@/types';
 
 const statusStyles: Record<string, string> = {
-  pending: 'bg-cream-200 text-ink',
-  paid: 'bg-green-100 text-green-800',
-  confirmed: 'bg-accent/20 text-accent-dark',
-  processing: 'bg-brand/10 text-brand',
-  shipped: 'bg-brand/10 text-brand',
-  delivered: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-600',
-  cancelled: 'bg-red-100 text-red-600',
+  PENDING: 'bg-cream-200 text-ink',
+  PAID: 'bg-green-100 text-green-800',
+  FAILED: 'bg-red-100 text-red-600',
+  CANCELLED: 'bg-red-100 text-red-600',
+  SHIPPED: 'bg-brand/10 text-brand',
+};
+
+const statusLabels: Record<string, string> = {
+  PENDING: 'Pendiente',
+  PAID: 'Pagado',
+  FAILED: 'Rechazado',
+  CANCELLED: 'Cancelado',
+  SHIPPED: 'Enviado',
 };
 
 function SuccessContent() {
@@ -104,7 +109,7 @@ function SuccessContent() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-ink-lighter">
-              Orden #{order.orderNumber || order.id.slice(0, 8)}
+              Orden #{order.id.slice(0, 8)}
             </p>
             <p className="mt-1 text-xs text-ink-lighter">
               {new Date(order.createdAt).toLocaleDateString('es-AR', {
@@ -119,7 +124,7 @@ function SuccessContent() {
           <span
             className={`inline-flex items-center px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider ${statusStyles[order.status] || 'bg-cream-200 text-ink'}`}
           >
-            {order.status === 'paid' ? 'Pagado' : order.status}
+            {statusLabels[order.status] || order.status}
           </span>
         </div>
 
@@ -127,18 +132,10 @@ function SuccessContent() {
           {order.items.map((item) => (
             <div key={item.id} className="flex justify-between text-sm">
               <div className="flex items-center gap-3">
-                {item.image && (
-                  <div className="h-12 w-12 flex-shrink-0 overflow-hidden bg-cream-200">
-                    <div
-                      className="h-full w-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${item.image})` }}
-                    />
-                  </div>
-                )}
                 <div>
-                  <p className="font-medium text-ink">{item.productName}</p>
+                  <p className="font-medium text-ink">{item.variant?.product?.name ?? 'Producto'}</p>
                   <p className="text-xs text-ink-lighter">
-                    {item.variantLabel} x{item.quantity}
+                    {item.variant?.sku ?? ''} x{item.quantity}
                   </p>
                 </div>
               </div>
@@ -159,7 +156,7 @@ function SuccessContent() {
           <div className="flex justify-between">
             <span className="text-ink-lighter">Envío</span>
             <span className="font-medium text-ink-lighter">
-              {order.shippingMethod === 'pickup' ? 'Gratis' : `$${order.shippingCost.toLocaleString('es-AR')}`}
+              ${order.shippingCost.toLocaleString('es-AR')}
             </span>
           </div>
         </div>

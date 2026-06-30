@@ -20,7 +20,7 @@ const mockProduct = {
   name: 'Remera Premium',
   slug: 'remera-premium',
   description: 'Remera de algodón premium',
-  basePrice: 14999.00,
+  basePrice: 14999.0,
   categoryId: mockCategory.id,
   isActive: true,
   createdAt: new Date('2024-01-01'),
@@ -43,7 +43,7 @@ const mockProduct = {
     {
       id: 'var-1',
       sku: 'REM-NEG-S',
-      price: 14999.00,
+      price: 14999.0,
       stock: 50,
       isActive: true,
       variantAttributeValues: [
@@ -90,10 +90,7 @@ describe('ProductsService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ProductsService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
+      providers: [ProductsService, { provide: PrismaService, useValue: mockPrismaService }],
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
@@ -109,13 +106,13 @@ describe('ProductsService', () => {
       name: 'Remera Premium',
       slug: 'remera-premium',
       description: 'Remera de algodón premium',
-      basePrice: 14999.00,
+      basePrice: 14999.0,
       categoryId: mockCategory.id,
       attributes: [{ attributeId: 'a0000000-0000-0000-0000-000000000001' }],
       variants: [
         {
           sku: 'REM-NEG-S',
-          price: 14999.00,
+          price: 14999.0,
           stock: 50,
           attributeValueIds: ['v1'],
         },
@@ -136,7 +133,7 @@ describe('ProductsService', () => {
         data: expect.objectContaining({
           name: 'Remera Premium',
           slug: 'remera-premium',
-          basePrice: 14999.00,
+          basePrice: 14999.0,
           categoryId: mockCategory.id,
           attributes: expect.objectContaining({
             create: expect.arrayContaining([
@@ -147,7 +144,7 @@ describe('ProductsService', () => {
             create: expect.arrayContaining([
               expect.objectContaining({
                 sku: 'REM-NEG-S',
-                price: 14999.00,
+                price: 14999.0,
                 stock: 50,
               }),
             ]),
@@ -267,9 +264,7 @@ describe('ProductsService', () => {
     it('should throw NotFoundException when slug does not exist', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
-      await expect(service.findBySlug('nonexistent')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findBySlug('nonexistent')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException when product is soft-deleted', async () => {
@@ -278,9 +273,7 @@ describe('ProductsService', () => {
         deletedAt: new Date(),
       });
 
-      await expect(service.findBySlug('deleted-product')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findBySlug('deleted-product')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -296,9 +289,7 @@ describe('ProductsService', () => {
     it('should throw NotFoundException when id does not exist', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent-id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('nonexistent-id')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -327,9 +318,7 @@ describe('ProductsService', () => {
     it('should throw NotFoundException when updating non-existent product', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.update('nonexistent-id', updateDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('nonexistent-id', updateDto)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -356,9 +345,7 @@ describe('ProductsService', () => {
     it('should throw NotFoundException when deleting non-existent product', async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
-      await expect(service.softDelete('nonexistent-id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.softDelete('nonexistent-id')).rejects.toThrow(NotFoundException);
     });
   });
 });

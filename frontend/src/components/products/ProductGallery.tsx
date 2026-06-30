@@ -3,8 +3,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface ProductImage {
+  url: string;
+  alt: string | null;
+}
+
 interface ProductGalleryProps {
-  images: string[];
+  images: ProductImage[];
   name: string;
 }
 
@@ -36,7 +41,7 @@ export default function ProductGallery({ images, name }: ProductGalleryProps) {
             transition={{ duration: 0.3 }}
             className="h-full w-full bg-cover bg-center"
             style={{
-              backgroundImage: `url(${images[selected]})`,
+              backgroundImage: `url(${images[selected].url})`,
               transform: zoomed ? 'scale(1.5)' : 'scale(1)',
               transition: 'transform 0.3s ease-out',
             }}
@@ -56,7 +61,7 @@ export default function ProductGallery({ images, name }: ProductGalleryProps) {
             >
               <div
                 className="h-full w-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${img})` }}
+                style={{ backgroundImage: `url(${img.url})` }}
               />
             </button>
           ))}

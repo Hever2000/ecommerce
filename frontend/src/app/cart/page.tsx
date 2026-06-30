@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/lib/cart-store';
@@ -9,11 +10,16 @@ import Button from '@/components/ui/Button';
 import { ShoppingBag } from 'lucide-react';
 
 export default function CartPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
 
   const total = items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (!mounted) return null;
 
   if (items.length === 0) {
     return (

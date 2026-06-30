@@ -21,7 +21,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateVariantDto.prototype, "sku", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 14999.00 }),
+    (0, swagger_1.ApiProperty)({ example: 14999.0 }),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)
@@ -33,7 +33,9 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateVariantDto.prototype, "stock", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ example: ['f0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000005'] }),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: ['f0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000005'],
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsUUID)('4', { each: true }),
@@ -66,7 +68,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateProductDto.prototype, "description", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 14999.00 }),
+    (0, swagger_1.ApiProperty)({ example: 14999.0 }),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)

@@ -40,12 +40,11 @@ function ConfirmationContent() {
   }, [orderId]);
 
   const statusStyles: Record<string, string> = {
-    pending: 'bg-cream-200 text-ink',
-    confirmed: 'bg-accent/20 text-accent-dark',
-    processing: 'bg-brand/10 text-brand',
-    shipped: 'bg-brand/10 text-brand',
-    delivered: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-600',
+    PENDING: 'bg-cream-200 text-ink',
+    PAID: 'bg-green-100 text-green-800',
+    FAILED: 'bg-red-100 text-red-600',
+    CANCELLED: 'bg-red-100 text-red-600',
+    SHIPPED: 'bg-brand/10 text-brand',
   };
 
   if (loading) {
@@ -91,7 +90,7 @@ function ConfirmationContent() {
       >
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <p className="text-xs text-ink-lighter">Order #{order.orderNumber}</p>
+            <p className="text-xs text-ink-lighter">Order #{order.id.slice(0, 8)}</p>
             <p className="mt-1 text-xs text-ink-lighter">
               {new Date(order.createdAt).toLocaleDateString('es-AR', {
                 year: 'numeric',
@@ -109,8 +108,8 @@ function ConfirmationContent() {
           {order.items.map((item) => (
             <div key={item.id} className="flex justify-between text-sm">
               <div>
-                <p className="font-medium text-ink">{item.productName}</p>
-                <p className="text-xs text-ink-lighter">{item.variantLabel} x{item.quantity}</p>
+                <p className="font-medium text-ink">{item.variant?.product?.name ?? 'Producto'}</p>
+                <p className="text-xs text-ink-lighter">{item.variant?.sku ?? ''} x{item.quantity}</p>
               </div>
               <span className="font-medium text-ink">
                 ${(item.unitPrice * item.quantity).toLocaleString('es-AR')}
@@ -122,26 +121,22 @@ function ConfirmationContent() {
         <div className="my-6 border-t border-cream-200" />
 
         <div className="space-y-3 text-sm">
-          {order.customerInfo && (
-            <div className="flex justify-between">
-              <span className="text-ink-lighter">Customer</span>
-              <span className="font-medium text-ink">
-                {order.customerInfo.firstName} {order.customerInfo.lastName}
-              </span>
-            </div>
-          )}
-          {order.shippingAddress && (
-            <div className="flex justify-between">
-              <span className="text-ink-lighter">Shipping to</span>
-              <span className="max-w-[250px] text-right font-medium text-ink">
-                {order.shippingAddress.street}, {order.shippingAddress.city}
-              </span>
-            </div>
-          )}
+          <div className="flex justify-between">
+            <span className="text-ink-lighter">Customer</span>
+            <span className="font-medium text-ink">
+              {order.guestFirstName} {order.guestLastName}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-ink-lighter">Shipping to</span>
+            <span className="max-w-[250px] text-right font-medium text-ink">
+              {order.guestAddress}, {order.guestCity}
+            </span>
+          </div>
           <div className="flex justify-between">
             <span className="text-ink-lighter">Method</span>
             <span className="font-medium text-ink">
-              {order.shippingMethod === 'pickup' ? 'Store Pickup' : 'Home Delivery'}
+              {order.shippingType === 'PICKUP' ? 'Store Pickup' : 'Home Delivery'}
             </span>
           </div>
         </div>

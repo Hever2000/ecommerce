@@ -15,6 +15,7 @@ export interface AuthResponse {
 }
 
 export function storeAuth(data: AuthResponse) {
+  if (typeof window === 'undefined') return;
   localStorage.setItem('auth-token', data.accessToken);
   localStorage.setItem('refresh-token', data.refreshToken);
   localStorage.setItem('auth-user', JSON.stringify(data.user));
@@ -32,6 +33,7 @@ export function getStoredRefreshToken(): string | null {
 }
 
 export function clearAuth() {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem('auth-token');
   localStorage.removeItem('refresh-token');
   localStorage.removeItem('auth-user');

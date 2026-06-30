@@ -1,6 +1,4 @@
-import {
-  Controller, Get, Post, Param, Query, Body, Patch,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Body, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrderStatus } from '@prisma/client';
 import { OrdersService } from './orders.service';
@@ -47,10 +45,7 @@ export class OrdersController {
   @Roles('ADMIN', 'EMPLOYEE')
   @Permissions('UPDATE_ORDER_STATUS')
   @ApiOperation({ summary: 'Update order status' })
-  updateStatus(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body('status') status: OrderStatus,
-  ) {
+  updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body('status') status: OrderStatus) {
     return this.ordersService.updateStatus(id, status);
   }
 }

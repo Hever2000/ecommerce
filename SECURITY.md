@@ -209,24 +209,22 @@ The Mercado Pago webhook at `POST /api/v1/payments/webhook`:
 
 Secrets stored in `backend/.env` and `frontend/.env.local` (gitignored). Template files in `.env.example`.
 
-### Production (AWS)
+### Production
 
-Secrets stored in **AWS Secrets Manager**:
+Secrets stored in environment variables (Docker Compose or VPS secrets management):
 
 | Secret            | Stored In          |
 | ----------------- | ------------------ |
-| JWT_SECRET        | Secrets Manager    |
-| MERCADO_PAGO_ACCESS_TOKEN | Secrets Manager |
-| RESEND_API_KEY    | Secrets Manager    |
-
-Terraform creates the secret and passes its ARN to the EC2 instance via user-data.
+| JWT_SECRET        | Environment / Vault|
+| MERCADO_PAGO_ACCESS_TOKEN | Environment / Vault |
+| RESEND_API_KEY    | Environment / Vault|
 
 ### What is NEVER committed
 
 - `.env` files
 - `credentials.json`
 - Any file containing tokens, keys, or passwords
-- Terraform `.tfvars` with secrets
+- `.tfvars` files with secrets
 
 ---
 
@@ -265,10 +263,8 @@ model AuditLog {
 - [ ] Generate a strong random JWT_SECRET (64+ chars)
 - [ ] Implement Mercado Pago webhook signature validation
 - [ ] Restrict CORS_ORIGIN to production domain
-- [ ] Enable HTTPS via ACM + Route53 (not just CloudFront default cert)
-- [ ] Restrict S3 bucket to CloudFront OAI only (remove public access)
-- [ ] Add Nginx/Caddy reverse proxy on EC2 (don't expose 3000/3001 directly)
-- [ ] Set up WAF in front of CloudFront
-- [ ] Enable CloudTrail for AWS API audit
-- [ ] Rotate secrets regularly via Secrets Manager
+- [ ] Enable HTTPS via Let's Encrypt (Nginx reverse proxy)
+- [ ] Add Nginx reverse proxy on VPS (don't expose 3000/3001 directly)
+- [ ] Restrict Supabase Storage bucket permissions (RLS policies)
+- [ ] Rotate secrets regularly
 - [ ] Run `npm audit` before each deployment

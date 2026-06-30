@@ -38,6 +38,7 @@ function clearAuthAndRedirect() {
 }
 
 async function refreshAccessToken(): Promise<string> {
+  if (typeof window === 'undefined') throw new Error('Cannot refresh on server');
   const refreshTokenValue = localStorage.getItem('refresh-token');
   if (!refreshTokenValue) throw new Error('No refresh token');
 

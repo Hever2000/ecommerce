@@ -1,49 +1,32 @@
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
 export declare class ProductsService {
     private prisma;
+    private storage;
     private readonly logger;
-    constructor(prisma: PrismaService);
+    constructor(prisma: PrismaService, storage: SupabaseStorageService);
     create(dto: CreateProductDto): Promise<{
         category: {
-            description: string | null;
-            name: string;
             id: string;
+            name: string;
+            slug: string;
+            description: string | null;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
-            slug: string;
             parentId: string | null;
         } | null;
-        attributes: ({
-            attribute: {
-                values: {
-                    id: string;
-                    createdAt: Date;
-                    attributeId: string;
-                    value: string;
-                }[];
-            } & {
-                name: string;
-                id: string;
-                createdAt: Date;
-            };
-        } & {
-            id: string;
-            createdAt: Date;
-            attributeId: string;
-            productId: string;
-        })[];
         variants: ({
             variantAttributeValues: ({
                 attributeValue: {
                     attribute: {
-                        name: string;
                         id: string;
+                        name: string;
                         createdAt: Date;
                     };
                 } & {
@@ -68,56 +51,83 @@ export declare class ProductsService {
             productId: string;
         })[];
         images: {
-            order: number;
             id: string;
             createdAt: Date;
             variantId: string | null;
             url: string;
             alt: string | null;
+            order: number;
             productId: string;
         }[];
+        attributes: ({
+            attribute: {
+                values: {
+                    id: string;
+                    createdAt: Date;
+                    attributeId: string;
+                    value: string;
+                }[];
+            } & {
+                id: string;
+                name: string;
+                createdAt: Date;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            attributeId: string;
+            productId: string;
+        })[];
     } & {
-        description: string | null;
-        name: string;
         id: string;
+        name: string;
+        slug: string;
+        description: string | null;
+        basePrice: Prisma.Decimal;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        slug: string;
-        basePrice: Prisma.Decimal;
         categoryId: string | null;
     }>;
     private transformVariants;
     findAll(query: QueryProductDto): Promise<{
         data: {
             basePrice: number;
+            price: number;
             variants: any[];
             category: {
-                name: string;
                 id: string;
+                name: string;
                 slug: string;
+                parentId: string | null;
+                parent: {
+                    slug: string;
+                    parent: {
+                        slug: string;
+                    } | null;
+                } | null;
             } | null;
-            _count: {
-                variants: number;
-            };
             images: {
-                order: number;
                 id: string;
                 createdAt: Date;
                 variantId: string | null;
                 url: string;
                 alt: string | null;
+                order: number;
                 productId: string;
             }[];
-            description: string | null;
-            name: string;
+            _count: {
+                variants: number;
+            };
             id: string;
+            name: string;
+            slug: string;
+            description: string | null;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
-            slug: string;
             categoryId: string | null;
         }[];
         meta: {
@@ -132,14 +142,14 @@ export declare class ProductsService {
     findBySlug(slug: string): Promise<any>;
     update(id: string, dto: UpdateProductDto): Promise<{
         category: {
-            description: string | null;
-            name: string;
             id: string;
+            name: string;
+            slug: string;
+            description: string | null;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
-            slug: string;
             parentId: string | null;
         } | null;
         variants: ({
@@ -166,25 +176,45 @@ export declare class ProductsService {
             productId: string;
         })[];
         images: {
-            order: number;
             id: string;
             createdAt: Date;
             variantId: string | null;
             url: string;
             alt: string | null;
+            order: number;
             productId: string;
         }[];
     } & {
-        description: string | null;
-        name: string;
         id: string;
+        name: string;
+        slug: string;
+        description: string | null;
+        basePrice: Prisma.Decimal;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        slug: string;
-        basePrice: Prisma.Decimal;
         categoryId: string | null;
     }>;
+    uploadImage(productId: string, file: Express.Multer.File, alt?: string, variantId?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        variantId: string | null;
+        url: string;
+        alt: string | null;
+        order: number;
+        productId: string;
+    }>;
+    uploadMultipleImages(productId: string, files: Express.Multer.File[]): Promise<{
+        id: string;
+        createdAt: Date;
+        variantId: string | null;
+        url: string;
+        alt: string | null;
+        order: number;
+        productId: string;
+    }[]>;
+    deleteImage(productId: string, imageId: string): Promise<void>;
+    reorderImages(productId: string, imageIds: string[]): Promise<void>;
     softDelete(id: string): Promise<void>;
 }

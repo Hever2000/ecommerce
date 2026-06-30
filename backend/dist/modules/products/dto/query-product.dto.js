@@ -13,6 +13,7 @@ exports.QueryProductDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
+const SORT_BY_WHITELIST = ['createdAt', 'updatedAt', 'name', 'basePrice'];
 class QueryProductDto {
     constructor() {
         this.page = 1;
@@ -41,13 +42,6 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], QueryProductDto.prototype, "published", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)(),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Boolean),
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], QueryProductDto.prototype, "featured", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),
@@ -85,12 +79,14 @@ __decorate([
     (0, swagger_1.ApiPropertyOptional)({ default: 'createdAt' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsIn)(SORT_BY_WHITELIST),
     __metadata("design:type", String)
 ], QueryProductDto.prototype, "sortBy", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ default: 'desc' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsIn)(['asc', 'desc']),
     __metadata("design:type", String)
 ], QueryProductDto.prototype, "sortOrder", void 0);
 //# sourceMappingURL=query-product.dto.js.map

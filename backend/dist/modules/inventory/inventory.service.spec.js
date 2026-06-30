@@ -8,7 +8,7 @@ const mockVariant = {
     id: 'v0000000-0000-0000-0000-000000000001',
     productId: 'p0000000-0000-0000-0000-000000000001',
     sku: 'REM-NEG-S',
-    price: 14999.00,
+    price: 14999.0,
     stock: 10,
     isActive: true,
     createdAt: new Date('2024-01-01'),
@@ -42,10 +42,7 @@ describe('InventoryService', () => {
             $transaction: jest.fn(),
         };
         const module = await testing_1.Test.createTestingModule({
-            providers: [
-                inventory_service_1.InventoryService,
-                { provide: prisma_service_1.PrismaService, useValue: mockPrismaService },
-            ],
+            providers: [inventory_service_1.InventoryService, { provide: prisma_service_1.PrismaService, useValue: mockPrismaService }],
         }).compile();
         service = module.get(inventory_service_1.InventoryService);
         prisma = module.get(prisma_service_1.PrismaService);
@@ -66,10 +63,7 @@ describe('InventoryService', () => {
             const result = await service.adjust({ variantId: mockVariant.id, type: 'ADD', quantity: 5, reason: 'Restock' }, userId);
             expect(result.previousStock).toBe(10);
             expect(result.newStock).toBe(15);
-            expect(prisma.$transaction).toHaveBeenCalledWith(expect.arrayContaining([
-                expect.any(Promise),
-                expect.any(Promise),
-            ]));
+            expect(prisma.$transaction).toHaveBeenCalledWith(expect.arrayContaining([expect.any(Promise), expect.any(Promise)]));
         });
         it('should decrease stock with type REMOVE', async () => {
             prisma.productVariant.findUnique.mockResolvedValue(mockVariant);
@@ -128,7 +122,13 @@ describe('InventoryService', () => {
         it('should return variants below threshold', async () => {
             const lowStockVariants = [
                 { ...mockVariant, stock: 3, product: { id: 'p1', name: 'Product A', slug: 'product-a' } },
-                { ...mockVariant, id: 'v2', sku: 'PRO-B-M', stock: 5, product: { id: 'p2', name: 'Product B', slug: 'product-b' } },
+                {
+                    ...mockVariant,
+                    id: 'v2',
+                    sku: 'PRO-B-M',
+                    stock: 5,
+                    product: { id: 'p2', name: 'Product B', slug: 'product-b' },
+                },
             ];
             prisma.productVariant.findMany.mockResolvedValue(lowStockVariants);
             const result = await service.getLowStock(10);

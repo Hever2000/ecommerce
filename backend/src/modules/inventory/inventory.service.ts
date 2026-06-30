@@ -55,7 +55,9 @@ export class InventoryService {
       }),
     ]);
 
-    this.logger.log(`Inventory adjusted: ${variant.sku} (${dto.type}: ${dto.quantity}) -> ${newStock}`);
+    this.logger.log(
+      `Inventory adjusted: ${variant.sku} (${dto.type}: ${dto.quantity}) -> ${newStock}`,
+    );
 
     return { variantId: dto.variantId, sku: variant.sku, previousStock: variant.stock, newStock };
   }

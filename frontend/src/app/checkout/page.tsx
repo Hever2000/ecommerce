@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,6 +53,9 @@ const PROGRESS_STEPS = [
 ];
 
 export default function CheckoutPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const router = useRouter();
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
@@ -160,6 +163,8 @@ export default function CheckoutPage() {
       setSubmitting(false);
     }
   }
+
+  if (!mounted) return null;
 
   if (items.length === 0) {
     return (

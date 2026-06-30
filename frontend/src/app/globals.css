@@ -10,11 +10,11 @@
   }
 
   body {
-    @apply bg-cream-50 text-ink font-sans antialiased;
+    @apply bg-cream text-ink font-sans antialiased;
   }
 
   ::selection {
-    @apply bg-brand text-cream-50;
+    @apply bg-ink text-cream;
   }
 }
 

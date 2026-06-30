@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var PaymentsController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentsController = void 0;
 const common_1 = require("@nestjs/common");
@@ -20,13 +21,24 @@ const public_decorator_1 = require("../../common/decorators/public.decorator");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const permissions_decorator_1 = require("../../common/decorators/permissions.decorator");
 const parse_uuid_pipe_1 = require("../../common/pipes/parse-uuid.pipe");
-const webhook_query_dto_1 = require("./dto/webhook-query.dto");
-let PaymentsController = class PaymentsController {
+let PaymentsController = PaymentsController_1 = class PaymentsController {
     constructor(paymentsService) {
         this.paymentsService = paymentsService;
+        this.logger = new common_1.Logger(PaymentsController_1.name);
     }
-    async webhook(payload, signature, requestId, query) {
-        return this.paymentsService.handleWebhook(payload, { 'x-signature': signature, 'x-request-id': requestId }, query?.['data.id']);
+    async webhook(payload, signature, requestId, topic, queryId, dataId, queryType) {
+        const headers = { 'x-signature': signature, 'x-request-id': requestId };
+        this.paymentsService.validateWebhookSignature(headers, dataId || queryId);
+        const paymentId = payload?.data?.id || queryId || dataId;
+        if (paymentId) {
+            this.paymentsService
+                .processWebhook('payment', String(paymentId))
+                .catch((err) => this.logger.error(`Webhook processing failed: ${err.message}`, err.stack));
+        }
+        else {
+            this.logger.log(`Webhook received without payment ID — topic: ${topic || queryType || 'unknown'}, body: ${JSON.stringify(payload).slice(0, 500)}`);
+        }
+        return { received: true };
     }
     async createPreference(orderId) {
         return this.paymentsService.createPreference(orderId);
@@ -39,13 +51,16 @@ exports.PaymentsController = PaymentsController;
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('webhook'),
-    (0, swagger_1.ApiOperation)({ summary: 'Mercado Pago webhook endpoint' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Mercado Pago webhook endpoint (IPN)' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Headers)('x-signature')),
     __param(2, (0, common_1.Headers)('x-request-id')),
-    __param(3, (0, common_1.Query)()),
+    __param(3, (0, common_1.Query)('topic')),
+    __param(4, (0, common_1.Query)('id')),
+    __param(5, (0, common_1.Query)('data.id')),
+    __param(6, (0, common_1.Query)('type')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String, webhook_query_dto_1.WebhookQueryDto]),
+    __metadata("design:paramtypes", [Object, String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "webhook", null);
 __decorate([
@@ -68,7 +83,7 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], PaymentsController.prototype, "getPaymentByOrder", null);
-exports.PaymentsController = PaymentsController = __decorate([
+exports.PaymentsController = PaymentsController = PaymentsController_1 = __decorate([
     (0, swagger_1.ApiTags)('Payments'),
     (0, common_1.Controller)('payments'),
     __metadata("design:paramtypes", [payments_service_1.PaymentsService])

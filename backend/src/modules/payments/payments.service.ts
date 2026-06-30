@@ -81,14 +81,14 @@ export class PaymentsService {
       if (usesHttp) {
         throw new BadRequestException(
           `MP requiere HTTPS en producción. Configurá las variables de entorno:\n` +
-          `  CORS_ORIGIN=${frontendUrl} → https://ecommerce-santiagocoronel.vercel.app\n` +
-          `  API_URL=${apiUrl} → https://ecommerce-xdi7.onrender.com`
+            `  CORS_ORIGIN=${frontendUrl} → https://ecommerce-santiagocoronel.vercel.app\n` +
+            `  API_URL=${apiUrl} → https://ecommerce-xdi7.onrender.com`,
         );
       }
     } else {
       this.logger.warn(
         `Creando preferencia con URLs locales (${frontendUrl}, ${apiUrl}). ` +
-        'En producción configurá CORS_ORIGIN y API_URL con HTTPS.'
+          'En producción configurá CORS_ORIGIN y API_URL con HTTPS.',
       );
     }
 
@@ -127,11 +127,9 @@ export class PaymentsService {
       this.logger.error(`Failed to create MP preference: ${err.message}`, err.stack);
       const mpCause = err.cause || err.message;
       // Extraer mensaje legible del error de MP
-      const mpMessage = typeof mpCause === 'string' ? mpCause
-        : mpCause?.message || JSON.stringify(mpCause);
-      throw new BadRequestException(
-        `Error de Mercado Pago: ${mpMessage}`
-      );
+      const mpMessage =
+        typeof mpCause === 'string' ? mpCause : mpCause?.message || JSON.stringify(mpCause);
+      throw new BadRequestException(`Error de Mercado Pago: ${mpMessage}`);
     }
 
     if (!result.id || !result.init_point) {
@@ -172,6 +170,11 @@ export class PaymentsService {
       this.logger.warn('WEBHOOK_SECRET not configured — skipping signature validation');
       return;
     }
+    if (!headers['x-signature']) {
+      this.logger.warn('No x-signature header — skipping signature validation');
+      return;
+    }
+
     try {
       WebhookSignatureValidator.validate({
         xSignature: headers['x-signature'],
@@ -189,10 +192,7 @@ export class PaymentsService {
     }
   }
 
-  async processWebhook(
-    type: string,
-    dataId: string,
-  ) {
+  async processWebhook(type: string, dataId: string) {
     const mpPaymentId = String(dataId);
 
     let mpPaymentData;
@@ -212,7 +212,9 @@ export class PaymentsService {
       : null;
 
     if (!payment) {
-      this.logger.warn(`Payment not found for MP payment ${mpPaymentId}, external_ref: ${externalRef}`);
+      this.logger.warn(
+        `Payment not found for MP payment ${mpPaymentId}, external_ref: ${externalRef}`,
+      );
       if (externalRef) {
         const mpId = mpPaymentData.id != null ? String(mpPaymentData.id) : undefined;
         await this.prisma.payment.create({
@@ -231,8 +233,28 @@ export class PaymentsService {
 
     const mpStatus = mpPaymentData.status || 'pending';
     const mpStatusDetail = mpPaymentData.status_detail || null;
-
     const mpId = mpPaymentData.id != null ? String(mpPaymentData.id) : mpPaymentId;
+
+    // Verify payer matches the order owner
+    if (mpStatus === 'approved' && payment.order) {
+      const payerEmail = mpPaymentData.payer?.email;
+      if (payerEmail && payerEmail !== payment.order.guestEmail) {
+        this.logger.warn(
+          `Payer email mismatch for order ${payment.order.id}: ` +
+            `MP says ${payerEmail}, order has ${payment.order.guestEmail} — rejecting`,
+        );
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            mpPaymentId: mpId,
+            mpStatus: 'rejected',
+            mpStatusDetail: 'payer_email_mismatch',
+          },
+        });
+        return { received: true };
+      }
+    }
+
     await this.prisma.payment.update({
       where: { id: payment.id },
       data: {

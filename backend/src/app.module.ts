@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -19,8 +21,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ShippingModule } from './modules/shipping/shipping.module';
 import { EmailModule } from './modules/email/email.module';
-import { StorageModule } from './modules/storage/storage.module';
-import { UploadsModule } from './modules/uploads/uploads.module';
+import { SupabaseStorageModule } from './modules/supabase-storage/supabase-storage.module';
 import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
@@ -29,10 +30,12 @@ import { AuditModule } from './modules/audit/audit.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -46,8 +49,7 @@ import { AuditModule } from './modules/audit/audit.module';
     PaymentsModule,
     ShippingModule,
     EmailModule,
-    StorageModule,
-    UploadsModule,
+    SupabaseStorageModule,
     AuditModule,
   ],
   providers: [
@@ -69,4 +71,8 @@ import { AuditModule } from './modules/audit/audit.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

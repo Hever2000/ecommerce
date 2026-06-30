@@ -14,11 +14,13 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const products_service_1 = require("./products.service");
 const create_product_dto_1 = require("./dto/create-product.dto");
 const update_product_dto_1 = require("./dto/update-product.dto");
 const query_product_dto_1 = require("./dto/query-product.dto");
+const reorder_images_dto_1 = require("./dto/reorder-images.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const permissions_decorator_1 = require("../../common/decorators/permissions.decorator");
 const public_decorator_1 = require("../../common/decorators/public.decorator");
@@ -41,6 +43,20 @@ let ProductsController = class ProductsController {
     }
     update(id, dto) {
         return this.productsService.update(id, dto);
+    }
+    async uploadImage(id, file) {
+        return this.productsService.uploadImage(id, file);
+    }
+    async uploadMultipleImages(id, files) {
+        return this.productsService.uploadMultipleImages(id, files);
+    }
+    async deleteImage(id, imageId) {
+        await this.productsService.deleteImage(id, imageId);
+        return { deleted: true };
+    }
+    async reorderImages(id, dto) {
+        await this.productsService.reorderImages(id, dto.imageIds);
+        return { reordered: true };
     }
     remove(id) {
         return this.productsService.softDelete(id);
@@ -98,11 +114,63 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "update", null);
 __decorate([
+    (0, common_1.Post)(':id/images'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, roles_decorator_1.Roles)('ADMIN', 'EMPLOYEE'),
+    (0, permissions_decorator_1.Permissions)('UPDATE_PRODUCT'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload image for product' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    __param(0, (0, common_1.Param)('id', parse_uuid_pipe_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "uploadImage", null);
+__decorate([
+    (0, common_1.Post)(':id/images/multiple'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, roles_decorator_1.Roles)('ADMIN', 'EMPLOYEE'),
+    (0, permissions_decorator_1.Permissions)('UPDATE_PRODUCT'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload multiple images for product' }),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('files', 10)),
+    __param(0, (0, common_1.Param)('id', parse_uuid_pipe_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Array]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "uploadMultipleImages", null);
+__decorate([
+    (0, common_1.Delete)(':id/images/:imageId'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, roles_decorator_1.Roles)('ADMIN', 'EMPLOYEE'),
+    (0, permissions_decorator_1.Permissions)('UPDATE_PRODUCT'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete product image' }),
+    __param(0, (0, common_1.Param)('id', parse_uuid_pipe_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Param)('imageId', parse_uuid_pipe_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "deleteImage", null);
+__decorate([
+    (0, common_1.Patch)(':id/images/reorder'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, roles_decorator_1.Roles)('ADMIN', 'EMPLOYEE'),
+    (0, permissions_decorator_1.Permissions)('UPDATE_PRODUCT'),
+    (0, swagger_1.ApiOperation)({ summary: 'Reorder product images' }),
+    __param(0, (0, common_1.Param)('id', parse_uuid_pipe_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, reorder_images_dto_1.ReorderImagesDto]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "reorderImages", null);
+__decorate([
     (0, common_1.Delete)(':id'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, roles_decorator_1.Roles)('ADMIN', 'EMPLOYEE'),
     (0, permissions_decorator_1.Permissions)('DELETE_PRODUCT'),
-    (0, swagger_1.ApiOperation)({ summary: 'Soft delete product' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Soft delete product with S3 image cleanup' }),
     __param(0, (0, common_1.Param)('id', parse_uuid_pipe_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

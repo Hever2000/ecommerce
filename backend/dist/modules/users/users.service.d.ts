@@ -8,23 +8,23 @@ export declare class UsersService {
     create(dto: CreateUserDto): Promise<{
         userRoles: ({
             role: {
-                description: string | null;
-                name: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                name: string;
+                description: string | null;
             };
         } & {
             roleId: string;
             userId: string;
         })[];
+        id: string;
         email: string;
         firstName: string;
         lastName: string;
-        id: string;
-        googleId: string | null;
         phone: string | null;
         avatar: string | null;
+        googleId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -34,23 +34,23 @@ export declare class UsersService {
         data: {
             userRoles: ({
                 role: {
-                    description: string | null;
-                    name: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    name: string;
+                    description: string | null;
                 };
             } & {
                 roleId: string;
                 userId: string;
             })[];
+            id: string;
             email: string;
             firstName: string;
             lastName: string;
-            id: string;
-            googleId: string | null;
             phone: string | null;
             avatar: string | null;
+            googleId: string | null;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -66,23 +66,23 @@ export declare class UsersService {
     findOne(id: string): Promise<{
         userRoles: ({
             role: {
-                description: string | null;
-                name: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                name: string;
+                description: string | null;
             };
         } & {
             roleId: string;
             userId: string;
         })[];
+        id: string;
         email: string;
         firstName: string;
         lastName: string;
-        id: string;
-        googleId: string | null;
         phone: string | null;
         avatar: string | null;
+        googleId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -91,23 +91,23 @@ export declare class UsersService {
     update(id: string, dto: UpdateUserDto): Promise<{
         userRoles: ({
             role: {
-                description: string | null;
-                name: string;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                name: string;
+                description: string | null;
             };
         } & {
             roleId: string;
             userId: string;
         })[];
+        id: string;
         email: string;
         firstName: string;
         lastName: string;
-        id: string;
-        googleId: string | null;
         phone: string | null;
         avatar: string | null;
+        googleId: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;

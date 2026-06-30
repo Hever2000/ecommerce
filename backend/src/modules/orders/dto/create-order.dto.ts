@@ -1,6 +1,4 @@
-import {
-  IsString, IsEmail, IsArray, ValidateNested, IsNumber, Min, IsEnum,
-} from 'class-validator';
+import { IsString, IsEmail, IsArray, ValidateNested, IsNumber, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { ShippingType } from '@prisma/client';

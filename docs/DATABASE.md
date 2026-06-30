@@ -31,7 +31,7 @@
 | `product_attributes`    | Which attributes a product uses                        |
 | `product_variants`      | SKU-level entity with price, stock per variant         |
 | `variant_attribute_values` | Maps a variant to its specific attribute values    |
-| `product_images`        | S3 URLs per product (optionally per variant)           |
+| `product_images`        | Supabase Storage URLs per product (optionally per variant)|
 
 ### Order Tables
 

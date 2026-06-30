@@ -1,4 +1,4 @@
-export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'paid' | 'failed' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'SHIPPED';
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'refunded';
 
@@ -9,24 +9,23 @@ export interface Product {
   name: string;
   slug: string;
   description: string;
+  basePrice: number;
   price: number;
-  comparePrice?: number;
-  images: string[];
-  categoryId: string;
+  images: Array<{ id: string; url: string; alt: string | null; order: number }>;
+  categoryId?: string;
   category?: Category;
   variants: ProductVariant[];
-  featured: boolean;
-  published: boolean;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ProductVariant {
   id: string;
-  productId: string;
   sku: string;
   price: number;
   stock: number;
+  isActive: boolean;
   attributes: Record<string, string>;
   image?: string;
 }
@@ -37,21 +36,26 @@ export interface Category {
   slug: string;
   description?: string;
   parentId?: string;
+  parent?: { id: string; name: string; slug: string } | null;
   children?: Category[];
 }
 
 export interface Order {
   id: string;
-  orderNumber: string;
+  guestEmail: string;
+  guestFirstName: string;
+  guestLastName: string;
+  guestPhone: string;
+  guestAddress: string;
+  guestCity: string;
+  guestProvince: string;
+  guestPostalCode: string;
   status: OrderStatus;
   items: OrderItem[];
   total: number;
   subtotal: number;
   shippingCost: number;
-  shippingMethod: ShippingMethod;
-  shippingAddress?: Address;
-  payment?: Payment;
-  customerInfo: CustomerInfo;
+  shippingType: 'PICKUP' | 'HOME_DELIVERY';
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -60,39 +64,27 @@ export interface Order {
 export interface OrderItem {
   id: string;
   orderId: string;
-  productId: string;
   variantId: string;
-  productName: string;
-  variantLabel: string;
   quantity: number;
   unitPrice: number;
-  subtotal: number;
-  image?: string;
+  totalPrice: number;
+  variant?: {
+    id: string;
+    sku: string;
+    price: number;
+    product: { id: string; name: string; slug: string };
+  };
 }
 
 export interface Payment {
   id: string;
   orderId: string;
-  method: string;
-  status: PaymentStatus;
+  mpPreferenceId?: string;
+  mpPaymentId?: string;
+  mpStatus?: string;
+  mpStatusDetail?: string;
   amount: number;
-  externalReference?: string;
-  preferenceId?: string;
   createdAt: string;
-}
-
-export interface Address {
-  street: string;
-  city: string;
-  province: string;
-  postalCode: string;
-}
-
-export interface CustomerInfo {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
 }
 
 export interface CartItem {
@@ -117,22 +109,27 @@ export interface CheckoutFormData {
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: Role;
-  active: boolean;
+  firstName: string;
+  lastName: string;
+  role: string;
+  permissions: string[];
+  isActive: boolean;
   createdAt: string;
 }
 
 export interface Role {
   id: string;
   name: string;
-  permissions: Permission[];
+  description?: string;
+  permissions: string[];
+  createdAt: string;
 }
 
 export interface Permission {
   id: string;
   name: string;
-  resource: string;
+  description?: string;
+  module: string;
 }
 
 export interface PaginatedResponse<T> {

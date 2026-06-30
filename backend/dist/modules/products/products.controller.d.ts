@@ -2,46 +2,28 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { ReorderImagesDto } from './dto/reorder-images.dto';
 export declare class ProductsController {
     private readonly productsService;
     constructor(productsService: ProductsService);
     create(dto: CreateProductDto): Promise<{
         category: {
-            description: string | null;
-            name: string;
             id: string;
+            name: string;
+            slug: string;
+            description: string | null;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
-            slug: string;
             parentId: string | null;
         } | null;
-        attributes: ({
-            attribute: {
-                values: {
-                    id: string;
-                    createdAt: Date;
-                    attributeId: string;
-                    value: string;
-                }[];
-            } & {
-                name: string;
-                id: string;
-                createdAt: Date;
-            };
-        } & {
-            id: string;
-            createdAt: Date;
-            attributeId: string;
-            productId: string;
-        })[];
         variants: ({
             variantAttributeValues: ({
                 attributeValue: {
                     attribute: {
-                        name: string;
                         id: string;
+                        name: string;
                         createdAt: Date;
                     };
                 } & {
@@ -66,55 +48,82 @@ export declare class ProductsController {
             productId: string;
         })[];
         images: {
-            order: number;
             id: string;
             createdAt: Date;
             variantId: string | null;
             url: string;
             alt: string | null;
+            order: number;
             productId: string;
         }[];
+        attributes: ({
+            attribute: {
+                values: {
+                    id: string;
+                    createdAt: Date;
+                    attributeId: string;
+                    value: string;
+                }[];
+            } & {
+                id: string;
+                name: string;
+                createdAt: Date;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            attributeId: string;
+            productId: string;
+        })[];
     } & {
-        description: string | null;
-        name: string;
         id: string;
+        name: string;
+        slug: string;
+        description: string | null;
+        basePrice: import("@prisma/client/runtime/library").Decimal;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        slug: string;
-        basePrice: import("@prisma/client/runtime/library").Decimal;
         categoryId: string | null;
     }>;
     findAll(query: QueryProductDto): Promise<{
         data: {
             basePrice: number;
+            price: number;
             variants: any[];
             category: {
-                name: string;
                 id: string;
+                name: string;
                 slug: string;
+                parentId: string | null;
+                parent: {
+                    slug: string;
+                    parent: {
+                        slug: string;
+                    } | null;
+                } | null;
             } | null;
-            _count: {
-                variants: number;
-            };
             images: {
-                order: number;
                 id: string;
                 createdAt: Date;
                 variantId: string | null;
                 url: string;
                 alt: string | null;
+                order: number;
                 productId: string;
             }[];
-            description: string | null;
-            name: string;
+            _count: {
+                variants: number;
+            };
             id: string;
+            name: string;
+            slug: string;
+            description: string | null;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
-            slug: string;
             categoryId: string | null;
         }[];
         meta: {
@@ -128,14 +137,14 @@ export declare class ProductsController {
     findOne(id: string): Promise<any>;
     update(id: string, dto: UpdateProductDto): Promise<{
         category: {
-            description: string | null;
-            name: string;
             id: string;
+            name: string;
+            slug: string;
+            description: string | null;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
-            slug: string;
             parentId: string | null;
         } | null;
         variants: ({
@@ -162,25 +171,49 @@ export declare class ProductsController {
             productId: string;
         })[];
         images: {
-            order: number;
             id: string;
             createdAt: Date;
             variantId: string | null;
             url: string;
             alt: string | null;
+            order: number;
             productId: string;
         }[];
     } & {
-        description: string | null;
-        name: string;
         id: string;
+        name: string;
+        slug: string;
+        description: string | null;
+        basePrice: import("@prisma/client/runtime/library").Decimal;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        slug: string;
-        basePrice: import("@prisma/client/runtime/library").Decimal;
         categoryId: string | null;
+    }>;
+    uploadImage(id: string, file: Express.Multer.File): Promise<{
+        id: string;
+        createdAt: Date;
+        variantId: string | null;
+        url: string;
+        alt: string | null;
+        order: number;
+        productId: string;
+    }>;
+    uploadMultipleImages(id: string, files: Express.Multer.File[]): Promise<{
+        id: string;
+        createdAt: Date;
+        variantId: string | null;
+        url: string;
+        alt: string | null;
+        order: number;
+        productId: string;
+    }[]>;
+    deleteImage(id: string, imageId: string): Promise<{
+        deleted: boolean;
+    }>;
+    reorderImages(id: string, dto: ReorderImagesDto): Promise<{
+        reordered: boolean;
     }>;
     remove(id: string): Promise<void>;
 }

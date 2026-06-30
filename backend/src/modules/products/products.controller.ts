@@ -1,6 +1,15 @@
 import {
-  Controller, Get, Post, Put, Patch, Delete,
-  Body, Param, Query, UploadedFiles, UploadedFile,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UploadedFiles,
+  UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
@@ -15,10 +24,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { ParseUUIDPipe } from '../../common/pipes/parse-uuid.pipe';
-import {
-  ALLOWED_MIME_TYPES,
-  MAX_FILE_SIZE,
-} from '../storage/constants/storage.constants';
 
 @ApiTags('Products')
 @Controller('products')
@@ -60,10 +65,7 @@ export class ProductsController {
   @Roles('ADMIN', 'EMPLOYEE')
   @Permissions('UPDATE_PRODUCT')
   @ApiOperation({ summary: 'Update product' })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateProductDto,
-  ) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
   }
 
@@ -113,10 +115,7 @@ export class ProductsController {
   @Roles('ADMIN', 'EMPLOYEE')
   @Permissions('UPDATE_PRODUCT')
   @ApiOperation({ summary: 'Reorder product images' })
-  async reorderImages(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: ReorderImagesDto,
-  ) {
+  async reorderImages(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ReorderImagesDto) {
     await this.productsService.reorderImages(id, dto.imageIds);
     return { reordered: true };
   }

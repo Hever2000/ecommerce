@@ -1,36 +1,128 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import ProductCard from '@/components/products/ProductCard';
 import ProductFilters from '@/components/products/ProductFilters';
 import type { Product, Category, PaginatedResponse } from '@/types';
 
-export default function ProductsContent() {
-  const router = useRouter();
+const SORT_OPTIONS = [
+  { label: 'Más recientes', value: 'newest', sortBy: 'createdAt', sortOrder: 'desc' },
+  { label: 'Precio: menor a mayor', value: 'price_asc', sortBy: 'basePrice', sortOrder: 'asc' },
+  { label: 'Precio: mayor a menor', value: 'price_desc', sortBy: 'basePrice', sortOrder: 'desc' },
+  { label: 'Nombre: A-Z', value: 'name_asc', sortBy: 'name', sortOrder: 'asc' },
+  { label: 'Nombre: Z-A', value: 'name_desc', sortBy: 'name', sortOrder: 'desc' },
+];
+
+interface BreadcrumbItem {
+  label: string;
+  href: string;
+}
+
+interface FlatCategory {
+  name: string;
+  parentSlug: string | null;
+}
+
+interface ProductsContentProps {
+  segments: string[];
+}
+
+function buildCategoryMap(tree: Category[]): Map<string, FlatCategory> {
+  const map = new Map<string, FlatCategory>();
+  function walk(cats: Category[], parentSlug: string | null) {
+    for (const cat of cats) {
+      if (map.has(cat.slug)) continue;
+      map.set(cat.slug, { name: cat.name, parentSlug });
+      if (cat.children) walk(cat.children, cat.slug);
+    }
+  }
+  walk(tree, null);
+  return map;
+}
+
+function resolveCategory(slug: string, map: Map<string, FlatCategory>) {
+  const info = map.get(slug);
+  if (!info) return null;
+
+  const ancestors: string[] = [];
+  let current: string | null = slug;
+  while (current) {
+    ancestors.unshift(current);
+    current = map.get(current)?.parentSlug ?? null;
+  }
+
+  const segments: string[] = [];
+  for (let i = 0; i < ancestors.length; i++) {
+    if (i === 0) {
+      segments.push(ancestors[i]);
+    } else {
+      segments.push(ancestors[i].replace(`${ancestors[i - 1]}-`, ''));
+    }
+  }
+
+  return { slug, name: info.name, segments, ancestors };
+}
+
+export default function ProductsContent({ segments }: ProductsContentProps) {
   const searchParams = useSearchParams();
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryTree, setCategoryTree] = useState<Category[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
   const currentPage = Number(searchParams.get('page')) || 1;
-  const currentCategory = searchParams.get('category') || '';
   const currentSearch = searchParams.get('search') || '';
-  const currentPriceRange = searchParams.get('priceRange') || '';
+  const currentSort = searchParams.get('sort') || 'newest';
 
-  const priceRanges = [
-    { label: 'All Prices', value: '' },
-    { label: 'Under $25', value: '0-25' },
-    { label: '$25 — $50', value: '25-50' },
-    { label: '$50 — $100', value: '50-100' },
-    { label: '$100 — $200', value: '100-200' },
-    { label: '$200+', value: '200-' },
-  ];
+  const categoryMap = useMemo(() => buildCategoryMap(categoryTree), [categoryTree]);
+
+  const resolved = useMemo(() => {
+    if (segments.length === 0) return null;
+    const slug = segments.join('-');
+    return resolveCategory(slug, categoryMap);
+  }, [segments, categoryMap]);
+
+  const currentCategory = resolved
+    ? { slug: resolved.slug, name: resolved.name }
+    : null;
+
+  const breadcrumbs = useMemo((): BreadcrumbItem[] => {
+    const items: BreadcrumbItem[] = [{ label: 'Productos', href: '/products' }];
+    if (!resolved) return items;
+    for (let i = 0; i < resolved.segments.length; i++) {
+      items.push({
+        label: resolved.ancestors[i]
+          ? (categoryMap.get(resolved.ancestors[i])?.name ?? resolved.segments[i])
+          : resolved.segments[i],
+        href: `/products/${resolved.segments.slice(0, i + 1).join('/')}`,
+      });
+    }
+    return items;
+  }, [resolved, categoryMap]);
+
+  const navItems = useMemo((): Category[] => {
+    if (!resolved) return categoryTree;
+    const last = resolved.ancestors[resolved.ancestors.length - 1];
+    const cat = (function find(tree: Category[]): Category | undefined {
+      for (const c of tree) {
+        if (c.slug === last) return c;
+        if (c.children) {
+          const found = find(c.children);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    })(categoryTree);
+    return cat?.children ?? [];
+  }, [resolved, categoryTree]);
+
+  const sortOption = SORT_OPTIONS.find((s) => s.value === currentSort) ?? SORT_OPTIONS[0];
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -38,30 +130,31 @@ export default function ProductsContent() {
       const query = new URLSearchParams();
       query.set('page', String(currentPage));
       query.set('limit', '12');
-      query.set('published', 'true');
-      if (currentCategory) query.set('categorySlug', currentCategory);
+      if (currentCategory?.slug) query.set('categorySlug', currentCategory.slug);
       if (currentSearch) query.set('search', currentSearch);
-      if (currentPriceRange) {
-        const [min, max] = currentPriceRange.split('-');
-        if (min) query.set('minPrice', min);
-        if (max) query.set('maxPrice', max);
-      }
+      query.set('sortBy', sortOption.sortBy);
+      query.set('sortOrder', sortOption.sortOrder);
 
       const [prodRes, catRes] = await Promise.all([
         api.get<PaginatedResponse<Product>>(`/products?${query.toString()}`),
-        api.get<PaginatedResponse<Category>>('/categories'),
+        api.get<Category[]>('/categories'),
       ]);
 
       setProducts(prodRes.data ?? []);
       setTotal(prodRes.meta.total);
       setTotalPages(prodRes.meta.totalPages);
-      setCategories(catRes.data ?? []);
+
+      if (categoryTree.length === 0) {
+        const roots = Array.isArray(catRes) ? catRes : (catRes as unknown as { data: Category[] }).data ?? [];
+        setCategoryTree(roots);
+      }
     } catch {
       setProducts([]);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, currentCategory, currentSearch, currentPriceRange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, currentCategory?.slug, currentSearch, sortOption.sortBy, sortOption.sortOrder]);
 
   useEffect(() => {
     fetchProducts();
@@ -73,8 +166,15 @@ export default function ProductsContent() {
       if (value) sp.set(key, value);
       else sp.delete(key);
     });
+    const base = resolved ? `/products/${resolved.segments.join('/')}` : '/products';
     const qs = sp.toString();
-    return `/products${qs ? `?${qs}` : ''}`;
+    return qs ? `${base}?${qs}` : base;
+  };
+
+  const getPageTitle = () => {
+    if (currentSearch) return `Resultados: "${currentSearch}"`;
+    if (currentCategory) return currentCategory.name;
+    return 'Toda la Colección';
   };
 
   const container = {
@@ -87,20 +187,75 @@ export default function ProductsContent() {
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-28 lg:px-8">
+      {breadcrumbs.length > 1 && (
+        <nav className="mb-6 flex items-center gap-2 text-xs text-ink-lighter">
+          {breadcrumbs.map((item, i) => (
+            <span key={item.href} className="flex items-center gap-2">
+              {i > 0 && <span>/</span>}
+              {i < breadcrumbs.length - 1 ? (
+                <Link href={item.href} className="hover:text-ink transition-colors">
+                  {item.label}
+                </Link>
+              ) : (
+                <span className="text-ink">{item.label}</span>
+              )}
+            </span>
+          ))}
+        </nav>
+      )}
+
       <div className="mb-10">
         <h1 className="font-display text-4xl font-bold text-ink lg:text-5xl">
-          {currentSearch ? `Search: "${currentSearch}"` : currentCategory ? currentCategory : 'All Products'}
+          {getPageTitle()}
         </h1>
         {!loading && (
           <p className="mt-2 text-sm text-ink-lighter">
-            {total} product{total !== 1 ? 's' : ''}
+            {total} producto{total !== 1 ? 's' : ''}
+            {currentCategory && <> en {currentCategory.name}</>}
           </p>
         )}
       </div>
 
+      {resolved && navItems.length > 0 && (
+        <div className="mb-10 flex flex-wrap gap-2 border-b border-border pb-6">
+          {resolved && (
+            <Link
+              href={resolved.segments.length > 1 ? `/products/${resolved.segments.slice(0, -1).join('/')}` : '/products'}
+              className="rounded-full border border-cream-200 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-lighter transition-colors hover:border-ink hover:text-ink"
+            >
+              Todo
+            </Link>
+          )}
+          {navItems.map((item) => {
+            const relative = resolved
+              ? item.slug.replace(`${resolved.slug}-`, '')
+              : item.slug;
+            const isActive = resolved && segments.length > resolved.segments.length
+              ? segments[resolved.segments.length] === relative
+              : false;
+            const href = resolved
+              ? `/products/${resolved.segments.join('/')}/${relative}`
+              : `/products/${item.slug}`;
+            return (
+              <Link
+                key={item.id}
+                href={href}
+                className={`rounded-full border px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors ${
+                  isActive
+                    ? 'border-gold bg-gold/10 text-ink'
+                    : 'border-cream-200 text-ink-lighter hover:border-ink hover:text-ink'
+                }`}
+              >
+                {item.name}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
       <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-12">
         <div className="hidden lg:block">
-          <ProductFilters categories={categories} />
+          <ProductFilters />
         </div>
 
         <div>
@@ -112,8 +267,8 @@ export default function ProductsContent() {
             </div>
           ) : products.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <p className="font-display text-2xl text-ink-lighter">No products found</p>
-              <p className="mt-2 text-sm text-ink-lighter">Try adjusting your filters.</p>
+              <p className="font-display text-2xl text-ink-lighter">Sin productos</p>
+              <p className="mt-2 text-sm text-ink-lighter">Probá ajustando los filtros.</p>
             </div>
           ) : (
             <>
@@ -143,7 +298,7 @@ export default function ProductsContent() {
                       href={buildHref({ page: String(currentPage - 1) })}
                       className="px-4 py-2 text-sm text-ink-lighter hover:text-ink transition-colors"
                     >
-                      ← Prev
+                      ← Anterior
                     </a>
                   )}
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -152,7 +307,7 @@ export default function ProductsContent() {
                       href={buildHref({ page: String(page) })}
                       className={`flex h-10 w-10 items-center justify-center text-sm transition-colors ${
                         page === currentPage
-                          ? 'bg-ink text-cream-50'
+                          ? 'bg-accent text-cream'
                           : 'text-ink-lighter hover:text-ink hover:bg-cream-200'
                       }`}
                     >
@@ -164,7 +319,7 @@ export default function ProductsContent() {
                       href={buildHref({ page: String(currentPage + 1) })}
                       className="px-4 py-2 text-sm text-ink-lighter hover:text-ink transition-colors"
                     >
-                      Next →
+                      Siguiente →
                     </a>
                   )}
                 </div>

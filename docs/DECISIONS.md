@@ -83,21 +83,21 @@ ProductVariant -> VariantAttributeValue (Variant X has Color=Red, Size=XL)
 - On payment failure, stock is automatically restored
 - Complete audit trail in the `payments` table
 
-## ADR-006: S3 + CloudFront for Images over Local Storage
+## ADR-006: Supabase Storage for Images over Local Storage
 
 **Status:** Accepted
 
 **Context:** Product images need to be served fast, at scale, without bloating the application server.
 
-**Decision:** Store images in AWS S3 with a CloudFront CDN distribution. The application server handles upload validation, then pushes to S3.
+**Decision:** Store images in Supabase Storage (S3-compatible, built-in CDN). The application server handles upload validation, then pushes to Supabase.
 
 **Consequences:**
-- Images served from CDN edge locations — low latency globally
+- Images served from Supabase CDN — low latency globally
 - Application server disk stays clean (no static file serving)
-- S3 bucket has public-read ACL, CloudFront OAC for security
+- Supabase Storage bucket with RLS policies for security
 - Upload size limit: 5MB per file, jpg/jpeg/png/webp only
-- CORS configured on the S3 bucket for direct browser uploads
-- CloudFront price class: PriceClass_100 (US/Europe only)
+- No separate CloudFront distribution to manage
+- Storage usage tracked in Supabase dashboard
 
 ## ADR-007: Supabase PostgreSQL over Self-Managed RDS
 

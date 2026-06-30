@@ -20,10 +20,11 @@ export declare class PaymentsService {
         }[];
         total: number;
     }>;
-    handleWebhook(body: any, headers: {
+    validateWebhookSignature(headers: {
         'x-signature'?: string;
         'x-request-id'?: string;
-    }, queryDataId?: string): Promise<{
+    }, queryDataId?: string): void;
+    processWebhook(type: string, dataId: string): Promise<{
         received: boolean;
     }>;
     getPaymentByOrder(orderId: string): Promise<{

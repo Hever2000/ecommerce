@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -34,10 +25,7 @@ export class UsersController {
   @Roles('ADMIN')
   @Permissions('MANAGE_EMPLOYEES')
   @ApiOperation({ summary: 'List all users' })
-  findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
+  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
     return this.usersService.findAll(page || 1, limit || 10);
   }
 
@@ -53,10 +41,7 @@ export class UsersController {
   @Roles('ADMIN')
   @Permissions('MANAGE_EMPLOYEES')
   @ApiOperation({ summary: 'Update user' })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateUserDto,
-  ) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }
 

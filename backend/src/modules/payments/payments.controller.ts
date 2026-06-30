@@ -1,6 +1,4 @@
-import {
-  Controller, Post, Get, Param, Body, Headers, Query, Logger,
-} from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, Headers, Query, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { Public } from '../../common/decorators/public.decorator';
@@ -30,20 +28,18 @@ export class PaymentsController {
   ) {
     const headers = { 'x-signature': signature, 'x-request-id': requestId };
 
-    // Try catch: MP webhook MUST always get 200 — even on invalid signature
-    try {
-      this.paymentsService.validateWebhookSignature(headers, dataId || queryId);
-    } catch {
-      this.logger.warn('Invalid webhook signature — still returning 200 to stop retries');
-    }
+    this.paymentsService.validateWebhookSignature(headers, dataId || queryId);
 
     const paymentId = payload?.data?.id || queryId || dataId;
 
     if (paymentId) {
-      this.paymentsService.processWebhook('payment', String(paymentId))
+      this.paymentsService
+        .processWebhook('payment', String(paymentId))
         .catch((err) => this.logger.error(`Webhook processing failed: ${err.message}`, err.stack));
     } else {
-      this.logger.log(`Webhook received without payment ID — topic: ${topic || queryType || 'unknown'}, body: ${JSON.stringify(payload).slice(0, 500)}`);
+      this.logger.log(
+        `Webhook received without payment ID — topic: ${topic || queryType || 'unknown'}, body: ${JSON.stringify(payload).slice(0, 500)}`,
+      );
     }
 
     return { received: true };

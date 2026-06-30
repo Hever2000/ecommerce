@@ -14,10 +14,7 @@ export class AuditController {
   @Get()
   @Permissions('VIEW_AUDIT_LOGS')
   @ApiOperation({ summary: 'List audit logs' })
-  findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
+  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
     return this.auditService.findAll(page || 1, limit || 20);
   }
 }

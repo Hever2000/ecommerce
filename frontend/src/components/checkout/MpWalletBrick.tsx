@@ -24,7 +24,6 @@ export default function MpWalletBrick({ preferenceId }: MpWalletBrickProps) {
       return;
     }
 
-    console.log('[MpWalletBrick] Inicializando SDK con Public Key:', pk.slice(0, 8) + '...');
     try {
       initMercadoPago(pk, { locale: 'es-AR' });
     } catch (err) {
@@ -60,8 +59,7 @@ export default function MpWalletBrick({ preferenceId }: MpWalletBrickProps) {
         initialization={{ preferenceId, redirectMode: 'blank' }}
         customization={{ valueProp: 'convenience_all' }}
         onReady={() => {
-          console.log('[MpWalletBrick] Wallet Brick listo');
-          setReady(true);
+              setReady(true);
         }}
         onError={(e) => {
           console.error('[MpWalletBrick] Wallet Brick error:', e);

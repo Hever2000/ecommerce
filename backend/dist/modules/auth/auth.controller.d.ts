@@ -13,7 +13,7 @@ export declare class AuthController {
             email: string;
             firstName: string;
             lastName: string;
-            role: any;
+            role: string;
             permissions: string[];
         };
         accessToken: string;
@@ -25,7 +25,7 @@ export declare class AuthController {
             email: string;
             firstName: string;
             lastName: string;
-            role: any;
+            role: string;
             permissions: string[];
         };
         accessToken: string;
@@ -38,7 +38,7 @@ export declare class AuthController {
             firstName: string;
             lastName: string;
             avatar: string | null;
-            role: any;
+            role: string;
             permissions: string[];
         };
         accessToken: string;
@@ -46,6 +46,7 @@ export declare class AuthController {
     }>;
     refresh(dto: RefreshDto): Promise<{
         accessToken: string;
+        refreshToken: string;
     }>;
     logout(dto: LogoutDto): Promise<{
         message: string;

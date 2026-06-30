@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException, ConflictException, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { Express } from 'express';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
+import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
@@ -13,7 +19,7 @@ export class ProductsService {
 
   constructor(
     private prisma: PrismaService,
-    private storage: StorageService,
+    private storage: SupabaseStorageService,
   ) {}
 
   async create(dto: CreateProductDto) {
@@ -99,7 +105,16 @@ export class ProductsService {
         where: { slug: query.categorySlug },
       });
       if (category) {
-        where.categoryId = category.id;
+        const result = await this.prisma.$queryRaw<{ id: string }[]>`
+          WITH RECURSIVE category_tree AS (
+            SELECT id FROM categories WHERE id = ${category.id}::uuid
+            UNION
+            SELECT c.id FROM categories c INNER JOIN category_tree ct ON c.parent_id = ct.id
+          )
+          SELECT id FROM category_tree
+        `;
+
+        where.categoryId = { in: result.map((r) => r.id) };
       }
     }
 
@@ -113,13 +128,21 @@ export class ProductsService {
     const limit = query.limit ?? 12;
     const skip = (page - 1) * limit;
 
-      const [products, total] = await Promise.all([
+    const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
         skip,
         take: limit,
         include: {
-          category: { select: { id: true, name: true, slug: true } },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              parentId: true,
+              parent: { select: { slug: true, parent: { select: { slug: true } } } },
+            },
+          },
           variants: {
             where: { isActive: true },
             select: {
@@ -181,7 +204,11 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
-        category: true,
+        category: {
+          include: {
+            parent: { select: { slug: true, parent: { select: { slug: true } } } },
+          },
+        },
         attributes: {
           include: {
             attribute: {
@@ -217,7 +244,11 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { slug },
       include: {
-        category: true,
+        category: {
+          include: {
+            parent: { select: { slug: true, parent: { select: { slug: true } } } },
+          },
+        },
         attributes: {
           include: {
             attribute: {
@@ -288,11 +319,11 @@ export class ProductsService {
 
     this.storage.validateFile(file);
 
-    const key = this.storage.generateKey(productId, file.originalname);
+    const path = this.storage.generatePath(productId, file.originalname);
 
     const result = await this.storage.upload({
       file,
-      key,
+      path,
       contentType: file.mimetype,
     });
 
@@ -315,10 +346,7 @@ export class ProductsService {
     return image;
   }
 
-  async uploadMultipleImages(
-    productId: string,
-    files: Express.Multer.File[],
-  ) {
+  async uploadMultipleImages(productId: string, files: Express.Multer.File[]) {
     const uploads = files.map((file) => this.uploadImage(productId, file));
     return Promise.all(uploads);
   }
@@ -332,9 +360,9 @@ export class ProductsService {
       throw new NotFoundException('Image not found for this product');
     }
 
-    const key = this.storage.extractKeyFromUrl(image.url);
-    if (key) {
-      await this.storage.delete(key);
+    const path = this.storage.extractPathFromUrl(image.url);
+    if (path) {
+      await this.storage.delete(path);
     }
 
     await this.prisma.productImage.delete({ where: { id: imageId } });
@@ -342,10 +370,7 @@ export class ProductsService {
     this.logger.log(`Image ${imageId} deleted for product ${productId}`);
   }
 
-  async reorderImages(
-    productId: string,
-    imageIds: string[],
-  ) {
+  async reorderImages(productId: string, imageIds: string[]) {
     const existing = await this.prisma.productImage.findMany({
       where: { productId },
       select: { id: true },
@@ -382,12 +407,12 @@ export class ProductsService {
     });
 
     for (const image of images) {
-      const key = this.storage.extractKeyFromUrl(image.url);
-      if (key) {
+      const path = this.storage.extractPathFromUrl(image.url);
+      if (path) {
         try {
-          await this.storage.delete(key);
+          await this.storage.delete(path);
         } catch (error) {
-          this.logger.warn(`Failed to delete S3 image ${key}: ${error}`);
+          this.logger.warn(`Failed to delete image ${path}: ${error}`);
         }
       }
     }
@@ -397,6 +422,6 @@ export class ProductsService {
       data: { deletedAt: new Date(), isActive: false },
     });
 
-    this.logger.log(`Product soft-deleted: ${id} with ${images.length} images cleaned from S3`);
+    this.logger.log(`Product soft-deleted: ${id} with ${images.length} images cleaned`);
   }
 }

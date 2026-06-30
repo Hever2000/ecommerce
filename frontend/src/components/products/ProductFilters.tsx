@@ -1,35 +1,31 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Search } from 'lucide-react';
 
-const PRICE_RANGES = [
-  { label: 'All Prices', value: '' },
-  { label: 'Under $25', value: '0-25' },
-  { label: '$25 — $50', value: '25-50' },
-  { label: '$50 — $100', value: '50-100' },
-  { label: '$100 — $200', value: '100-200' },
-  { label: '$200+', value: '200-' },
+const SORT_OPTIONS = [
+  { label: 'Más recientes', value: 'newest' },
+  { label: 'Precio: menor a mayor', value: 'price_asc' },
+  { label: 'Precio: mayor a menor', value: 'price_desc' },
+  { label: 'Nombre: A-Z', value: 'name_asc' },
+  { label: 'Nombre: Z-A', value: 'name_desc' },
 ];
 
-interface ProductFiltersProps {
-  categories: { slug: string; name: string }[];
-}
-
-export default function ProductFilters({ categories }: ProductFiltersProps) {
+export default function ProductFilters() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentCategory = searchParams.get('category') || '';
-  const currentPrice = searchParams.get('priceRange') || '';
   const currentSearch = searchParams.get('search') || '';
+  const currentSort = searchParams.get('sort') || 'newest';
 
   function updateParam(key: string, value: string) {
     const sp = new URLSearchParams(searchParams.toString());
     if (value) sp.set(key, value);
     else sp.delete(key);
     sp.delete('page');
-    router.push(`/products?${sp.toString()}`);
+    const qs = sp.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
   }
 
   function handleSearch(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -39,10 +35,10 @@ export default function ProductFilters({ categories }: ProductFiltersProps) {
   }
 
   function handleClear() {
-    router.push('/products');
+    router.push(pathname);
   }
 
-  const hasFilters = currentCategory || currentPrice || currentSearch;
+  const hasFilters = currentSearch || currentSort !== 'newest';
 
   return (
     <aside className="space-y-8">
@@ -52,7 +48,7 @@ export default function ProductFilters({ categories }: ProductFiltersProps) {
           <input
             type="text"
             defaultValue={currentSearch}
-            placeholder="Search..."
+            placeholder="Buscar..."
             onKeyDown={handleSearch}
             className="w-full border border-cream-200 bg-transparent py-3 pl-10 pr-4 text-sm text-ink placeholder:text-ink-lighter focus:border-ink focus:outline-none"
           />
@@ -61,48 +57,19 @@ export default function ProductFilters({ categories }: ProductFiltersProps) {
 
       <div>
         <h4 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-lighter">
-          Category
+          Ordenar por
         </h4>
-        <div className="space-y-2">
-          <button
-            onClick={() => updateParam('category', '')}
-            className={`block w-full text-left text-sm transition-colors ${
-              !currentCategory ? 'font-semibold text-ink' : 'text-ink-lighter hover:text-ink'
-            }`}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.slug}
-              onClick={() => updateParam('category', cat.slug)}
-              className={`block w-full text-left text-sm transition-colors ${
-                currentCategory === cat.slug ? 'font-semibold text-ink' : 'text-ink-lighter hover:text-ink'
-              }`}
-            >
-              {cat.name}
-            </button>
+        <select
+          value={currentSort}
+          onChange={(e) => updateParam('sort', e.target.value)}
+          className="w-full border border-cream-200 bg-transparent px-3 py-3 text-sm text-ink focus:border-ink focus:outline-none"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
           ))}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-lighter">
-          Price
-        </h4>
-        <div className="space-y-2">
-          {PRICE_RANGES.map((range) => (
-            <button
-              key={range.value}
-              onClick={() => updateParam('priceRange', range.value)}
-              className={`block w-full text-left text-sm transition-colors ${
-                currentPrice === range.value ? 'font-semibold text-ink' : 'text-ink-lighter hover:text-ink'
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
+        </select>
       </div>
 
       {hasFilters && (
@@ -110,7 +77,7 @@ export default function ProductFilters({ categories }: ProductFiltersProps) {
           onClick={handleClear}
           className="text-xs font-semibold uppercase tracking-wider text-accent hover:text-accent-dark transition-colors"
         >
-          Clear All
+          Limpiar filtros
         </button>
       )}
     </aside>

@@ -10,7 +10,7 @@ const mockVariant = {
     id: 'v0000000-0000-0000-0000-000000000001',
     productId: 'p0000000-0000-0000-0000-000000000001',
     sku: 'REM-NEG-S',
-    price: 14999.00,
+    price: 14999.0,
     stock: 10,
     isActive: true,
     createdAt: new Date('2024-01-01'),
@@ -30,8 +30,8 @@ const mockOrderItem = {
     orderId: 'o0000000-0000-0000-0000-000000000001',
     variantId: mockVariant.id,
     quantity: 2,
-    unitPrice: 14999.00,
-    totalPrice: 29998.00,
+    unitPrice: 14999.0,
+    totalPrice: 29998.0,
     variant: {
         ...mockVariant,
         variantAttributeValues: [],
@@ -44,7 +44,7 @@ const mockPayment = {
     mpPaymentId: null,
     mpStatus: 'pending',
     mpStatusDetail: null,
-    amount: 29998.00,
+    amount: 29998.0,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
 };
@@ -60,8 +60,8 @@ const mockOrder = {
     guestPostalCode: '1000',
     shippingType: client_1.ShippingType.PICKUP,
     shippingCost: 0,
-    subtotal: 29998.00,
-    total: 29998.00,
+    subtotal: 29998.0,
+    total: 29998.0,
     status: client_1.OrderStatus.PENDING,
     notes: null,
     createdAt: new Date('2024-01-01'),
@@ -169,13 +169,13 @@ describe('OrdersService', () => {
                         ...mockOrder,
                         shippingType: client_1.ShippingType.HOME_DELIVERY,
                         shippingCost: 900,
-                        total: 29998.00 + 900,
+                        total: 29998.0 + 900,
                     }),
                 },
             };
             prisma.$transaction.mockImplementation(async (cb) => cb(mockTx));
             await service.create(homeDeliveryDto);
-            expect(shippingService.calculateCost).toHaveBeenCalledWith('Buenos Aires', 29998.00, 1);
+            expect(shippingService.calculateCost).toHaveBeenCalledWith('Buenos Aires', 29998.0, 1);
         });
         it('should have zero shipping cost for PICKUP', async () => {
             prisma.productVariant.findMany.mockResolvedValue([mockVariant]);

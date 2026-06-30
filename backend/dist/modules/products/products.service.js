@@ -13,9 +13,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const supabase_storage_service_1 = require("../supabase-storage/supabase-storage.service");
 let ProductsService = ProductsService_1 = class ProductsService {
-    constructor(prisma) {
+    constructor(prisma, storage) {
         this.prisma = prisma;
+        this.storage = storage;
         this.logger = new common_1.Logger(ProductsService_1.name);
     }
     async create(dto) {
@@ -92,7 +94,15 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 where: { slug: query.categorySlug },
             });
             if (category) {
-                where.categoryId = category.id;
+                const result = await this.prisma.$queryRaw `
+          WITH RECURSIVE category_tree AS (
+            SELECT id FROM categories WHERE id = ${category.id}::uuid
+            UNION
+            SELECT c.id FROM categories c INNER JOIN category_tree ct ON c.parent_id = ct.id
+          )
+          SELECT id FROM category_tree
+        `;
+                where.categoryId = { in: result.map((r) => r.id) };
             }
         }
         if (query.minPrice !== undefined || query.maxPrice !== undefined) {
@@ -111,7 +121,15 @@ let ProductsService = ProductsService_1 = class ProductsService {
                 skip,
                 take: limit,
                 include: {
-                    category: { select: { id: true, name: true, slug: true } },
+                    category: {
+                        select: {
+                            id: true,
+                            name: true,
+                            slug: true,
+                            parentId: true,
+                            parent: { select: { slug: true, parent: { select: { slug: true } } } },
+                        },
+                    },
                     variants: {
                         where: { isActive: true },
                         select: {
@@ -140,11 +158,15 @@ let ProductsService = ProductsService_1 = class ProductsService {
             this.prisma.product.count({ where }),
         ]);
         return {
-            data: products.map((p) => ({
-                ...p,
-                basePrice: Number(p.basePrice),
-                variants: this.transformVariants(p.variants),
-            })),
+            data: products.map((p) => {
+                const basePrice = Number(p.basePrice);
+                return {
+                    ...p,
+                    basePrice,
+                    price: basePrice,
+                    variants: this.transformVariants(p.variants),
+                };
+            }),
             meta: {
                 page,
                 limit,
@@ -154,9 +176,11 @@ let ProductsService = ProductsService_1 = class ProductsService {
         };
     }
     transformProduct(product) {
+        const basePrice = Number(product.basePrice);
         return {
             ...product,
-            basePrice: Number(product.basePrice),
+            basePrice,
+            price: basePrice,
             variants: this.transformVariants(product.variants ?? []),
         };
     }
@@ -164,7 +188,11 @@ let ProductsService = ProductsService_1 = class ProductsService {
         const product = await this.prisma.product.findUnique({
             where: { id },
             include: {
-                category: true,
+                category: {
+                    include: {
+                        parent: { select: { slug: true, parent: { select: { slug: true } } } },
+                    },
+                },
                 attributes: {
                     include: {
                         attribute: {
@@ -197,7 +225,11 @@ let ProductsService = ProductsService_1 = class ProductsService {
         const product = await this.prisma.product.findUnique({
             where: { slug },
             include: {
-                category: true,
+                category: {
+                    include: {
+                        parent: { select: { slug: true, parent: { select: { slug: true } } } },
+                    },
+                },
                 attributes: {
                     include: {
                         attribute: {
@@ -252,18 +284,96 @@ let ProductsService = ProductsService_1 = class ProductsService {
         this.logger.log(`Product updated: ${product.name}`);
         return product;
     }
+    async uploadImage(productId, file, alt, variantId) {
+        await this.findOne(productId);
+        this.storage.validateFile(file);
+        const path = this.storage.generatePath(productId, file.originalname);
+        const result = await this.storage.upload({
+            file,
+            path,
+            contentType: file.mimetype,
+        });
+        const maxOrder = await this.prisma.productImage.aggregate({
+            where: { productId },
+            _max: { order: true },
+        });
+        const image = await this.prisma.productImage.create({
+            data: {
+                productId,
+                variantId: variantId ?? null,
+                url: result.url,
+                alt: alt ?? null,
+                order: (maxOrder._max.order ?? -1) + 1,
+            },
+        });
+        this.logger.log(`Image uploaded for product ${productId}: ${image.id}`);
+        return image;
+    }
+    async uploadMultipleImages(productId, files) {
+        const uploads = files.map((file) => this.uploadImage(productId, file));
+        return Promise.all(uploads);
+    }
+    async deleteImage(productId, imageId) {
+        const image = await this.prisma.productImage.findFirst({
+            where: { id: imageId, productId },
+        });
+        if (!image) {
+            throw new common_1.NotFoundException('Image not found for this product');
+        }
+        const path = this.storage.extractPathFromUrl(image.url);
+        if (path) {
+            await this.storage.delete(path);
+        }
+        await this.prisma.productImage.delete({ where: { id: imageId } });
+        this.logger.log(`Image ${imageId} deleted for product ${productId}`);
+    }
+    async reorderImages(productId, imageIds) {
+        const existing = await this.prisma.productImage.findMany({
+            where: { productId },
+            select: { id: true },
+        });
+        const existingIds = new Set(existing.map((img) => img.id));
+        const allValid = imageIds.every((id) => existingIds.has(id));
+        if (!allValid) {
+            throw new common_1.BadRequestException('Some image IDs do not belong to this product');
+        }
+        if (imageIds.length !== existing.length) {
+            throw new common_1.BadRequestException('Must include all product images');
+        }
+        await this.prisma.$transaction(imageIds.map((id, index) => this.prisma.productImage.update({
+            where: { id },
+            data: { order: index },
+        })));
+        this.logger.log(`Images reordered for product ${productId}`);
+    }
     async softDelete(id) {
         await this.findOne(id);
+        const images = await this.prisma.productImage.findMany({
+            where: { productId: id },
+            select: { url: true },
+        });
+        for (const image of images) {
+            const path = this.storage.extractPathFromUrl(image.url);
+            if (path) {
+                try {
+                    await this.storage.delete(path);
+                }
+                catch (error) {
+                    this.logger.warn(`Failed to delete image ${path}: ${error}`);
+                }
+            }
+        }
         await this.prisma.product.update({
             where: { id },
             data: { deletedAt: new Date(), isActive: false },
         });
-        this.logger.log(`Product soft-deleted: ${id}`);
+        this.logger.log(`Product soft-deleted: ${id} with ${images.length} images cleaned`);
     }
 };
 exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = ProductsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        supabase_storage_service_1.SupabaseStorageService])
 ], ProductsService);
 //# sourceMappingURL=products.service.js.map

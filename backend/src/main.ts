@@ -19,14 +19,10 @@ async function bootstrap() {
 
   app.enableCors({
     origin(origin, callback) {
-      if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app')
-      ) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
+        callback(new Error(`Origin not allowed by CORS`));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],

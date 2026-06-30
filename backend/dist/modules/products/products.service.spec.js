@@ -20,7 +20,7 @@ const mockProduct = {
     name: 'Remera Premium',
     slug: 'remera-premium',
     description: 'Remera de algodón premium',
-    basePrice: 14999.00,
+    basePrice: 14999.0,
     categoryId: mockCategory.id,
     isActive: true,
     createdAt: new Date('2024-01-01'),
@@ -43,7 +43,7 @@ const mockProduct = {
         {
             id: 'var-1',
             sku: 'REM-NEG-S',
-            price: 14999.00,
+            price: 14999.0,
             stock: 50,
             isActive: true,
             variantAttributeValues: [
@@ -86,10 +86,7 @@ describe('ProductsService', () => {
             },
         };
         const module = await testing_1.Test.createTestingModule({
-            providers: [
-                products_service_1.ProductsService,
-                { provide: prisma_service_1.PrismaService, useValue: mockPrismaService },
-            ],
+            providers: [products_service_1.ProductsService, { provide: prisma_service_1.PrismaService, useValue: mockPrismaService }],
         }).compile();
         service = module.get(products_service_1.ProductsService);
         prisma = module.get(prisma_service_1.PrismaService);
@@ -102,13 +99,13 @@ describe('ProductsService', () => {
             name: 'Remera Premium',
             slug: 'remera-premium',
             description: 'Remera de algodón premium',
-            basePrice: 14999.00,
+            basePrice: 14999.0,
             categoryId: mockCategory.id,
             attributes: [{ attributeId: 'a0000000-0000-0000-0000-000000000001' }],
             variants: [
                 {
                     sku: 'REM-NEG-S',
-                    price: 14999.00,
+                    price: 14999.0,
                     stock: 50,
                     attributeValueIds: ['v1'],
                 },
@@ -126,7 +123,7 @@ describe('ProductsService', () => {
                 data: expect.objectContaining({
                     name: 'Remera Premium',
                     slug: 'remera-premium',
-                    basePrice: 14999.00,
+                    basePrice: 14999.0,
                     categoryId: mockCategory.id,
                     attributes: expect.objectContaining({
                         create: expect.arrayContaining([
@@ -137,7 +134,7 @@ describe('ProductsService', () => {
                         create: expect.arrayContaining([
                             expect.objectContaining({
                                 sku: 'REM-NEG-S',
-                                price: 14999.00,
+                                price: 14999.0,
                                 stock: 50,
                             }),
                         ]),

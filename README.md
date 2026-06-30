@@ -4,15 +4,14 @@
   <img src="https://img.shields.io/badge/frontend-Next.js_14-000000" alt="Next.js">
   <img src="https://img.shields.io/badge/DB-PostgreSQL-336791" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/ORM-Prisma_5-2D3748" alt="Prisma">
-  <img src="https://img.shields.io/badge/infra-Terraform-7B42BC" alt="Terraform">
   <img src="https://img.shields.io/badge/payments-Mercado_Pago-00B1EA" alt="Mercado Pago">
 </p>
 
-# Ecommerce AWS
+# Premium Ballroom
 
 Full-featured ecommerce platform with guest checkout, RBAC admin panel, and Mercado Pago payments.
 
-Built with **NestJS 10** (modular monolith) + **Next.js 14** (App Router) + **PostgreSQL** (Supabase) + **AWS** (S3, CloudFront, EC2).
+Built with **NestJS 10** (modular monolith) + **Next.js 14** (App Router) + **PostgreSQL** (Supabase) + **Supabase Storage**.
 
 ## Features
 
@@ -21,27 +20,23 @@ Built with **NestJS 10** (modular monolith) + **Next.js 14** (App Router) + **Po
 - **Product catalog** — EAV attributes, SKU variants, category tree, search + filter + paginate.
 - **Mercado Pago payments** — webhook-only status updates (never trust the frontend).
 - **Inventory management** — stock adjustments with immutable audit trail.
-- **AWS S3 + CloudFront** — image uploads served from CDN edge.
+- **Supabase Storage** — image uploads with built-in CDN.
 - **Docker Compose** — one command to run the full stack.
-- **Terraform** — deploy EC2, S3, CloudFront, Secrets Manager, CloudWatch.
 - **Swagger** — auto-generated API docs at `/api/v1/docs`.
 
 ## Architecture
 
 ```
-                    ┌─────────────┐
-                    │  CloudFront  │
-                    │  (CDN/S3)    │
-                    └──────┬──────┘
-                           │
-                    ┌──────▼──────┐         ┌──────────────┐
-                    │   EC2 (Docker)         │  Supabase    │
-                    │             │         │  PostgreSQL  │
-                    │  Frontend   │         └──────▲───────┘
-                    │  :3001      │                │
-                    │  Backend    │────────────────┘
-                    │  :3000      │
-                    └─────────────┘
+                    ┌──────────────┐
+                    │  VPS (Docker) │
+                    │              │         ┌──────────────┐
+                    │  Nginx       │         │  Supabase    │
+                    │  (proxy/SSL) │         │  PostgreSQL  │
+                    │  Frontend    │         │  + Storage   │
+                    │  :3001       │         └──────▲───────┘
+                    │  Backend     │────────────────┘
+                    │  :3000       │
+                    └──────────────┘
 ```
 
 [Full architecture →](ARCHITECTURE.md) | [Security →](SECURITY.md) | [Deployment →](DEPLOYMENT.md)
@@ -57,16 +52,16 @@ Built with **NestJS 10** (modular monolith) + **Next.js 14** (App Router) + **Po
 | Auth | JWT (access 15m + refresh 7d) + Google OAuth |
 | Payments | Mercado Pago (webhook-driven) |
 | Email | Resend (transactional) |
-| Storage | AWS S3 + CloudFront CDN |
-| Infra | Docker, Terraform (AWS) |
-| Monitoring | CloudWatch + Winston |
+| Storage | Supabase Storage |
+| Infra | Docker Compose |
+| Monitoring | Winston |
 
 ## Quick Start
 
 ```bash
 # 1. Clone
-git clone https://github.com/your-org/ecommerce-aws
-cd ecommerce-aws
+git clone https://github.com/your-org/premium-ballroom
+cd premium-ballroom
 
 # 2. Backend
 cd backend
@@ -95,7 +90,7 @@ docker compose up --build
 ## Project Structure
 
 ```
-ecommerce-aws/
+premium-ballroom/
 ├── backend/                    # NestJS API (monolito modular)
 │   ├── prisma/
 │   │   ├── schema.prisma       # Data model
@@ -113,8 +108,6 @@ ecommerce-aws/
 │       ├── components/         # UI components
 │       ├── lib/                # API client, auth, cart store
 │       └── types/              # TypeScript types
-├── infra/
-│   └── terraform/              # AWS IaC
 ├── docs/                       # Supplementary docs
 ├── docker-compose.yml          # Full stack containers
 ├── ARCHITECTURE.md
@@ -147,20 +140,13 @@ ecommerce-aws/
 | `npm run lint` | Next.js lint |
 | `npm run format` | Prettier |
 
-### Infrastructure
 
-```bash
-cd infra/terraform
-terraform init
-terraform plan -var="ec2_key_name=my-key" -var="jwt_secret=..."
-terraform apply
-```
 
 ## Environment Variables
 
 See `.env.example` in each app directory:
 
-- [Backend](backend/.env.example) — 16 variables (DB, JWT, MP, AWS, Resend, CORS)
+- [Backend](backend/.env.example) — 16 variables (DB, JWT, MP, Supabase, Resend, CORS)
 - [Frontend](frontend/.env.example) — 2 variables (API URL, Google Client ID)
 
 ## Documentation
@@ -169,7 +155,7 @@ See `.env.example` in each app directory:
 |----------|------------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Stack, Monolito Modular, RBAC, data flows, security, deployment |
 | [SECURITY.md](SECURITY.md) | JWT auth, RBAC guards, rate limiting, Helmet, CORS, secrets |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Local setup, Docker, Terraform, CI/CD, monitoring |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Local setup, Docker, CI/CD |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [API.md](docs/API.md) | All endpoints with examples |
 | [DATABASE.md](docs/DATABASE.md) | ERD, indexes, enums, EAV model |

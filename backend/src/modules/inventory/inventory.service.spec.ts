@@ -7,7 +7,7 @@ const mockVariant = {
   id: 'v0000000-0000-0000-0000-000000000001',
   productId: 'p0000000-0000-0000-0000-000000000001',
   sku: 'REM-NEG-S',
-  price: 14999.00,
+  price: 14999.0,
   stock: 10,
   isActive: true,
   createdAt: new Date('2024-01-01'),
@@ -45,10 +45,7 @@ describe('InventoryService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        InventoryService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
+      providers: [InventoryService, { provide: PrismaService, useValue: mockPrismaService }],
     }).compile();
 
     service = module.get<InventoryService>(InventoryService);
@@ -64,9 +61,7 @@ describe('InventoryService', () => {
 
     it('should increase stock with type ADD', async () => {
       prisma.productVariant.findUnique.mockResolvedValue(mockVariant);
-      prisma.$transaction.mockImplementation(async (args: any[]) =>
-        Promise.all(args),
-      );
+      prisma.$transaction.mockImplementation(async (args: any[]) => Promise.all(args));
       prisma.productVariant.update.mockResolvedValue({
         ...mockVariant,
         stock: 15,
@@ -81,18 +76,13 @@ describe('InventoryService', () => {
       expect(result.previousStock).toBe(10);
       expect(result.newStock).toBe(15);
       expect(prisma.$transaction).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.any(Promise),
-          expect.any(Promise),
-        ]),
+        expect.arrayContaining([expect.any(Promise), expect.any(Promise)]),
       );
     });
 
     it('should decrease stock with type REMOVE', async () => {
       prisma.productVariant.findUnique.mockResolvedValue(mockVariant);
-      prisma.$transaction.mockImplementation(async (args: any[]) =>
-        Promise.all(args),
-      );
+      prisma.$transaction.mockImplementation(async (args: any[]) => Promise.all(args));
       prisma.productVariant.update.mockResolvedValue({
         ...mockVariant,
         stock: 7,
@@ -110,18 +100,13 @@ describe('InventoryService', () => {
       prisma.productVariant.findUnique.mockResolvedValue(mockVariant);
 
       await expect(
-        service.adjust(
-          { variantId: mockVariant.id, type: 'REMOVE', quantity: 20 },
-          userId,
-        ),
+        service.adjust({ variantId: mockVariant.id, type: 'REMOVE', quantity: 20 }, userId),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should set exact stock with type SET', async () => {
       prisma.productVariant.findUnique.mockResolvedValue(mockVariant);
-      prisma.$transaction.mockImplementation(async (args: any[]) =>
-        Promise.all(args),
-      );
+      prisma.$transaction.mockImplementation(async (args: any[]) => Promise.all(args));
       prisma.productVariant.update.mockResolvedValue({
         ...mockVariant,
         stock: 25,
@@ -139,10 +124,7 @@ describe('InventoryService', () => {
       prisma.productVariant.findUnique.mockResolvedValue(mockVariant);
 
       await expect(
-        service.adjust(
-          { variantId: mockVariant.id, type: 'SET', quantity: -5 },
-          userId,
-        ),
+        service.adjust({ variantId: mockVariant.id, type: 'SET', quantity: -5 }, userId),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -150,18 +132,13 @@ describe('InventoryService', () => {
       prisma.productVariant.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.adjust(
-          { variantId: 'nonexistent-id', type: 'ADD', quantity: 5 },
-          userId,
-        ),
+        service.adjust({ variantId: 'nonexistent-id', type: 'ADD', quantity: 5 }, userId),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should create an inventory movement record', async () => {
       prisma.productVariant.findUnique.mockResolvedValue(mockVariant);
-      prisma.$transaction.mockImplementation(async (args: any[]) =>
-        Promise.all(args),
-      );
+      prisma.$transaction.mockImplementation(async (args: any[]) => Promise.all(args));
       prisma.productVariant.update.mockResolvedValue({ ...mockVariant, stock: 15 });
       prisma.inventoryMovement.create.mockResolvedValue(mockMovement);
 
@@ -185,10 +162,7 @@ describe('InventoryService', () => {
       prisma.productVariant.findUnique.mockResolvedValue(mockVariant);
 
       await expect(
-        service.adjust(
-          { variantId: mockVariant.id, type: 'INVALID' as any, quantity: 5 },
-          userId,
-        ),
+        service.adjust({ variantId: mockVariant.id, type: 'INVALID' as any, quantity: 5 }, userId),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -197,7 +171,13 @@ describe('InventoryService', () => {
     it('should return variants below threshold', async () => {
       const lowStockVariants = [
         { ...mockVariant, stock: 3, product: { id: 'p1', name: 'Product A', slug: 'product-a' } },
-        { ...mockVariant, id: 'v2', sku: 'PRO-B-M', stock: 5, product: { id: 'p2', name: 'Product B', slug: 'product-b' } },
+        {
+          ...mockVariant,
+          id: 'v2',
+          sku: 'PRO-B-M',
+          stock: 5,
+          product: { id: 'p2', name: 'Product B', slug: 'product-b' },
+        },
       ];
       prisma.productVariant.findMany.mockResolvedValue(lowStockVariants);
 

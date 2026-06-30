@@ -2,65 +2,61 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
 
 export default function Hero() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-brand/40 via-brand/20 to-brand/60 z-10" />
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1920&q=80)',
-          filter: 'brightness(0.7)',
-        }}
-      />
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url(/fondoo.jpg)' }}
+        />
       <div className="relative z-20 mx-auto max-w-4xl px-6 text-center">
         <motion.span
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-6 inline-block text-[10px] font-semibold uppercase tracking-[0.3em] text-accent"
+          className="mb-6 inline-block text-[10px] font-semibold uppercase tracking-[0.3em] text-gold"
         >
-          Summer Collection 2026
+          La elegancia del movimiento
         </motion.span>
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="font-display text-display-sm font-bold text-white sm:text-display"
+          className="font-display text-display-sm font-bold text-cream sm:text-display"
         >
-          Define Your
+          Premium
           <br />
-          <span className="italic text-accent">Style</span>
+          <span className="italic text-gold">Ballroom</span>
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-white/80"
+          className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-cream/80"
         >
-          Premium apparel designed for those who refuse to blend in.
-          Quality that speaks, fits that feel like they were made for you.
+          La colección definitiva de las marcas más prestigiosas del mundo,
+          unificada en un solo lugar.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-10 flex items-center justify-center gap-4"
+          className="mt-10"
         >
-          <Link href="/products">
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-ink">
-              Shop Now
-            </Button>
-          </Link>
-          <Link href="/collections">
-            <Button variant="ghost" size="lg" className="text-white/80 hover:bg-white/10 hover:text-white">
-              Explore
-            </Button>
+          <Link
+            href="/products"
+            className="group relative inline-block border border-gold/50 px-10 py-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink"
+          >
+            <span className="relative z-10">
+              Explorar el Catálogo
+            </span>
           </Link>
         </motion.div>
       </div>
+
+      <div className="absolute bottom-0 left-0 right-0 z-10 h-10 bg-gradient-to-t from-cream to-transparent" />
     </section>
   );
 }
